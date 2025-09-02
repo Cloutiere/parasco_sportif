@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+// [client/src/pages/home.tsx] - Version 2.1 - Correction du chemin d'importation du hook
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,106 +14,14 @@ import {
   LinearScale
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+// CHEMIN CORRIGÉ : L'import est maintenant relatif à client/src/pages/
+import { useBudgetCalculator } from '../hooks/useBudgetCalculator'; 
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
-interface BudgetFormData {
-  discipline: string;
-  level: string;
-  category: string;
-  headCoachRate: number;
-  assistantCoachRate: number;
-  seasonWeeks: number;
-  practicesPerWeek: number;
-  practiceDuration: number;
-  numGames: number;
-  gameDuration: number;
-  playoffWeeks: number;
-  playoffFinalDays: number;
-  playoffFinalsDuration: number;
-  tournamentBonus: number;
-  federationFee: number;
-}
-
-interface BudgetResults {
-  costSeasonPractices: number;
-  costSeasonGames: number;
-  costPlayoffPractices: number;
-  costPlayoffFinals: number;
-  totalCoachingSalaries: number;
-  tournamentBonus: number;
-  federationFee: number;
-  grandTotal: number;
-}
-
 export default function Home() {
-
-  const [formData, setFormData] = useState<BudgetFormData>({
-    discipline: 'Handball',
-    level: 'Tous',
-    category: 'D4',
-    headCoachRate: 35,
-    assistantCoachRate: 27,
-    seasonWeeks: 25,
-    practicesPerWeek: 2,
-    practiceDuration: 1.5,
-    numGames: 12,
-    gameDuration: 3.5,
-    playoffWeeks: 2,
-    playoffFinalDays: 2,
-    playoffFinalsDuration: 8,
-    tournamentBonus: 500,
-    federationFee: 1148,
-  });
-
-  const [results, setResults] = useState<BudgetResults>({
-    costSeasonPractices: 0,
-    costSeasonGames: 0,
-    costPlayoffPractices: 0,
-    costPlayoffFinals: 0,
-    totalCoachingSalaries: 0,
-    tournamentBonus: 0,
-    federationFee: 0,
-    grandTotal: 0,
-  });
-
-  const formatCurrency = (value: number): string => {
-    return value.toFixed(2).replace('.', ',') + ' $';
-  };
-
-  const calculateBudget = () => {
-    const totalCoachRatePerHour = formData.headCoachRate + formData.assistantCoachRate;
-
-    // Regular season costs
-    const totalPracticeHoursSeason = formData.seasonWeeks * formData.practicesPerWeek * formData.practiceDuration;
-    const costSeasonPractices = totalPracticeHoursSeason * totalCoachRatePerHour;
-
-    const totalGameHoursSeason = formData.numGames * formData.gameDuration;
-    const costSeasonGames = totalGameHoursSeason * totalCoachRatePerHour;
-
-    // Playoff costs
-    const totalPracticeHoursPlayoffs = formData.playoffWeeks * formData.practicesPerWeek * formData.practiceDuration;
-    const costPlayoffPractices = totalPracticeHoursPlayoffs * totalCoachRatePerHour;
-
-    const totalPlayoffFinalHours = formData.playoffFinalDays * formData.playoffFinalsDuration;
-    const costPlayoffFinals = totalPlayoffFinalHours * totalCoachRatePerHour;
-
-    // Totals
-    const totalCoachingSalaries = costSeasonPractices + costSeasonGames + costPlayoffPractices + costPlayoffFinals;
-    const grandTotal = totalCoachingSalaries + formData.tournamentBonus + formData.federationFee;
-
-    setResults({
-      costSeasonPractices,
-      costSeasonGames,
-      costPlayoffPractices,
-      costPlayoffFinals,
-      totalCoachingSalaries,
-      tournamentBonus: formData.tournamentBonus,
-      federationFee: formData.federationFee,
-      grandTotal,
-    });
-  };
+  const { formData, results, handleInputChange, formatCurrency } = useBudgetCalculator();
 
   // Chart data configuration
   const chartData = {
@@ -173,17 +82,6 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    calculateBudget();
-  }, [formData]);
-
-  const handleInputChange = (field: keyof BudgetFormData, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: typeof value === 'string' ? value : Number(value)
-    }));
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -212,7 +110,7 @@ export default function Home() {
                   <span>Paramètres de Configuration</span>
                 </CardTitle>
               </CardHeader>
-              
+
               <CardContent className="p-6 space-y-6">
                 {/* Team Information */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
@@ -433,7 +331,7 @@ export default function Home() {
                   <span>Répartition des Coûts</span>
                 </CardTitle>
               </CardHeader>
-              
+
               <CardContent className="p-6">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -506,7 +404,7 @@ export default function Home() {
                   <span>Visualisation du Budget</span>
                 </CardTitle>
               </CardHeader>
-              
+
               <CardContent className="p-6">
                 <div className="bg-muted/30 rounded-lg p-4 h-80">
                   <Doughnut data={chartData} options={chartOptions} data-testid="chart-budget" />
