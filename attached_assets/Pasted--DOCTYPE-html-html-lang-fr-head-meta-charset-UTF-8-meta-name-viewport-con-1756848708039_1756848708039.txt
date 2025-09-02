@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de Budget d'Équipe Sportive</title>
+    <!-- Intégration de la librairie Chart.js pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- Style Général --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        
+        /* --- Grille principale --- */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+        }
+
+        /* --- Section du Formulaire (Paramètres) --- */
+        #budgetForm {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        fieldset {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        legend {
+            font-weight: bold;
+            color: #004a99;
+            padding: 0 10px;
+        }
+        .form-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 20px;
+            align-items: center;
+        }
+        label {
+            font-weight: 500;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        /* --- Section des Résultats --- */
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .results-table th, .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .results-table th {
+            background-color: #e9ecef;
+        }
+        .results-table td:last-child {
+            text-align: right;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .total-row {
+            background-color: #0056b3;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .subtotal-row {
+            font-style: italic;
+            background-color: #f8f9fa;
+        }
+        
+        /* --- Graphique --- */
+        .chart-container {
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background: #fdfdfd;
+        }
+        
+        /* --- Responsive Design --- */
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+         @media (max-width: 500px) {
+            .form-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Calculateur de Budget d'Équipe Sportive</h1>
+        
+        <div class="main-grid">
+            <!-- COLONNE DE GAUCHE : PARAMÈTRES MODIFIABLES -->
+            <form id="budgetForm">
+                <fieldset>
+                    <legend>Informations de l'Équipe</legend>
+                    <div class="form-group">
+                        <label for="discipline">Discipline</label>
+                        <select id="discipline">
+                            <option value="Handball" selected>Handball</option>
+                            <option value="Basketball">Basketball</option>
+                            <option value="Volleyball">Volleyball</option>
+                        </select>
+                        <label for="level">Niveau</label>
+                        <select id="level">
+                            <option value="Benjamin">Benjamin</option>
+                            <option value="Cadet">Cadet</option>
+                            <option value="Juvenile">Juvénile</option>
+                            <option value="Tous" selected>Tous</option>
+                        </select>
+                        <label for="category">Catégorie</label>
+                        <select id="category">
+                            <option value="D2">D2</option>
+                            <option value="D3">D3</option>
+                            <option value="D4" selected>D4</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Entraîneurs</legend>
+                    <div class="form-group">
+                        <label for="headCoachRate">Taux horaire Chef ($/h)</label>
+                        <input type="number" id="headCoachRate" value="35">
+                        <label for="assistantCoachRate">Taux horaire Adjoint ($/h)</label>
+                        <input type="number" id="assistantCoachRate" value="27">
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Saison Régulière (14 sept 2025 - 23 mars 2026)</legend>
+                    <div class="form-group">
+                        <label for="seasonWeeks">Durée (semaines)</label>
+                        <input type="number" id="seasonWeeks" value="25">
+                        <label for="practicesPerWeek">Entraînements / semaine</label>
+                        <input type="number" id="practicesPerWeek" value="2">
+                        <label for="practiceDuration">Durée entraînement (heures)</label>
+                        <input type="number" id="practiceDuration" value="1.5" step="0.5">
+                        <label for="numGames">Nombre de matchs</label>
+                        <input type="number" id="numGames" value="12">
+                        <label for="gameDuration">Durée match (heures)</label>
+                        <input type="number" id="gameDuration" value="3.5" step="0.5">
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Séries (Playoffs) (29 mars - 12 mai 2026)</legend>
+                     <div class="form-group">
+                        <label for="playoffWeeks">Durée (semaines)</label>
+                        <input type="number" id="playoffWeeks" value="2">
+                        <label for="playoffFinalDays">Jours de finales</label>
+                        <input type="number" id="playoffFinalDays" value="2">
+                        <label for="playoffFinalsDuration">Durée jour de finale (heures)</label>
+                        <input type="number" id="playoffFinalsDuration" value="8">
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Autres Coûts</legend>
+                    <div class="form-group">
+                        <label for="tournamentBonus">Bonus Tournoi ($)</label>
+                        <input type="number" id="tournamentBonus" value="500">
+                        <label for="federationFee">Frais Fédération (RSEQ) ($)</label>
+                        <input type="number" id="federationFee" value="1148">
+                    </div>
+                </fieldset>
+            </form>
+
+            <!-- COLONNE DE DROITE : RÉSULTATS ET GRAPHIQUE -->
+            <div class="results-section">
+                <div>
+                    <h2>Répartition des Coûts</h2>
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Poste de Dépense</th>
+                                <th>Coût Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Entraînements (Saison régulière)</td>
+                                <td id="resSeasonPractices">0.00 $</td>
+                            </tr>
+                            <tr>
+                                <td>Matchs (Saison régulière)</td>
+                                <td id="resSeasonGames">0.00 $</td>
+                            </tr>
+                            <tr>
+                                <td>Entraînements (Séries)</td>
+                                <td id="resPlayoffPractices">0.00 $</td>
+                            </tr>
+                            <tr>
+                                <td>Journées de finales (Séries)</td>
+                                <td id="resPlayoffFinals">0.00 $</td>
+                            </tr>
+                            <tr class="subtotal-row">
+                                <td><strong>Sous-total Salaires Entraîneurs</strong></td>
+                                <td id="resTotalCoaching">0.00 $</td>
+                            </tr>
+                             <tr>
+                                <td>Bonus Tournoi</td>
+                                <td id="resTournament">0.00 $</td>
+                            </tr>
+                            <tr>
+                                <td>Frais de Fédération (RSEQ)</td>
+                                <td id="resFederation">0.00 $</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>BUDGET TOTAL</td>
+                                <td id="resGrandTotal">0.00 $</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="chart-container">
+                    <h2>Visualisation du Budget</h2>
+                    <canvas id="budgetChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIQUE DE CALCUL (JAVASCRIPT) ---
+
+        // Références aux éléments du formulaire et des résultats
+        const form = document.getElementById('budgetForm');
+        const budgetChartCanvas = document.getElementById('budgetChart').getContext('2d');
+        let budgetChart;
+
+        // Fonction pour formater un nombre en devise
+        function formatCurrency(value) {
+            return value.toFixed(2).replace('.', ',') + ' $';
+        }
+        
+        function calculateBudget() {
+            // 1. Récupérer toutes les valeurs des champs (en les convertissant en nombres)
+            const headCoachRate = parseFloat(document.getElementById('headCoachRate').value) || 0;
+            const assistantCoachRate = parseFloat(document.getElementById('assistantCoachRate').value) || 0;
+            
+            const seasonWeeks = parseFloat(document.getElementById('seasonWeeks').value) || 0;
+            const practicesPerWeek = parseFloat(document.getElementById('practicesPerWeek').value) || 0;
+            const practiceDuration = parseFloat(document.getElementById('practiceDuration').value) || 0;
+            const numGames = parseFloat(document.getElementById('numGames').value) || 0;
+            const gameDuration = parseFloat(document.getElementById('gameDuration').value) || 0;
+
+            const playoffWeeks = parseFloat(document.getElementById('playoffWeeks').value) || 0;
+            const playoffFinalDays = parseFloat(document.getElementById('playoffFinalDays').value) || 0;
+            const playoffFinalsDuration = parseFloat(document.getElementById('playoffFinalsDuration').value) || 0;
+
+            const tournamentBonus = parseFloat(document.getElementById('tournamentBonus').value) || 0;
+            const federationFee = parseFloat(document.getElementById('federationFee').value) || 0;
+
+            // 2. Calculer les coûts
+            const totalCoachRatePerHour = headCoachRate + assistantCoachRate;
+
+            // Coûts de la saison régulière
+            const totalPracticeHoursSeason = seasonWeeks * practicesPerWeek * practiceDuration;
+            const costSeasonPractices = totalPracticeHoursSeason * totalCoachRatePerHour;
+            
+            const totalGameHoursSeason = numGames * gameDuration;
+            const costSeasonGames = totalGameHoursSeason * totalCoachRatePerHour;
+
+            // Coûts des séries (playoffs)
+            // Les entraînements continuent au même rythme pendant les séries
+            const totalPracticeHoursPlayoffs = playoffWeeks * practicesPerWeek * practiceDuration;
+            const costPlayoffPractices = totalPracticeHoursPlayoffs * totalCoachRatePerHour;
+            
+            const totalFinalsHoursPlayoffs = playoffFinalDays * playoffFinalsDuration;
+            const costPlayoffFinals = totalFinalsHoursPlayoffs * totalCoachRatePerHour;
+
+            // Calculs des totaux
+            const totalCoachingCost = costSeasonPractices + costSeasonGames + costPlayoffPractices + costPlayoffFinals;
+            const grandTotal = totalCoachingCost + tournamentBonus + federationFee;
+
+            // 3. Afficher les résultats dans le tableau
+            document.getElementById('resSeasonPractices').innerText = formatCurrency(costSeasonPractices);
+            document.getElementById('resSeasonGames').innerText = formatCurrency(costSeasonGames);
+            document.getElementById('resPlayoffPractices').innerText = formatCurrency(costPlayoffPractices);
+            document.getElementById('resPlayoffFinals').innerText = formatCurrency(costPlayoffFinals);
+            document.getElementById('resTotalCoaching').innerText = formatCurrency(totalCoachingCost);
+            document.getElementById('resTournament').innerText = formatCurrency(tournamentBonus);
+            document.getElementById('resFederation').innerText = formatCurrency(federationFee);
+            document.getElementById('resGrandTotal').innerText = formatCurrency(grandTotal);
+            
+            // 4. Mettre à jour le graphique
+            updateChart([costSeasonPractices, costSeasonGames, costPlayoffPractices, costPlayoffFinals, tournamentBonus, federationFee]);
+        }
+
+        function updateChart(dataValues) {
+            const chartData = {
+                labels: [
+                    'Salaires - Entraînements Saison',
+                    'Salaires - Matchs Saison',
+                    'Salaires - Entraînements Séries',
+                    'Salaires - Finales Séries',
+                    'Bonus Tournoi',
+                    'Frais Fédération'
+                ],
+                datasets: [{
+                    label: 'Répartition des coûts',
+                    data: dataValues,
+                    backgroundColor: [
+                        '#007bff',
+                        '#17a2b8',
+                        '#28a745',
+                        '#6f42c1',
+                        '#fd7e14',
+                        '#dc3545'
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            };
+
+            if (budgetChart) {
+                // Si le graphique existe déjà, on met juste ses données à jour
+                budgetChart.data = chartData;
+                budgetChart.update();
+            } else {
+                // Sinon, on le crée
+                budgetChart = new Chart(budgetChartCanvas, {
+                    type: 'pie', // Type de graphique : 'pie' (camembert), 'bar' (barres), etc.
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: false,
+                                text: 'Répartition du Budget'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // --- Événements ---
+        // Lancer le calcul au chargement de la page
+        document.addEventListener('DOMContentLoaded', calculateBudget);
+        // Lancer le calcul à chaque modification d'un champ du formulaire
+        form.addEventListener('input', calculateBudget);
+
+    </script>
+
+</body>
+</html>
