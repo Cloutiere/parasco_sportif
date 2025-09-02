@@ -1,10 +1,13 @@
-// [client/src/pages/home.tsx] - Version 2.1 - Correction du chemin d'importation du hook
+// [client/src/pages/home.tsx] - Version 3.0 - Remplacement des inputs de durée par des sélecteurs de dates
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, BarChart3, Calculator } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Settings, BarChart3, Calculator, CalendarIcon } from 'lucide-react';
 import { 
   Chart as ChartJS, 
   ArcElement, 
@@ -14,8 +17,10 @@ import {
   LinearScale
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-// CHEMIN CORRIGÉ : L'import est maintenant relatif à client/src/pages/
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator'; 
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { DateRange } from 'react-day-picker';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
@@ -197,17 +202,37 @@ export default function Home() {
 
                 {/* Regular Season */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
-                  <legend className="text-sm font-medium text-primary px-3 bg-background">Saison Régulière (14 sept 2025 - 23 mars 2026)</legend>
+                  <legend className="text-sm font-medium text-primary px-3 bg-background">Saison Régulière</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="seasonWeeks">Durée (semaines)</Label>
-                      <Input
-                        id="seasonWeeks"
-                        type="number"
-                        value={formData.seasonWeeks}
-                        onChange={(e) => handleInputChange('seasonWeeks', e.target.value)}
-                        data-testid="input-season-weeks"
-                      />
+                      <Label>Durée de la saison</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className="w-full justify-start text-left font-normal"
+                            data-testid="date-range-season"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.seasonStartDate && formData.seasonEndDate ? (
+                              `${format(formData.seasonStartDate, 'd MMM yyyy', { locale: fr })} - ${format(formData.seasonEndDate, 'd MMM yyyy', { locale: fr })}`
+                            ) : (
+                              <span>Choisir une plage de dates</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="range"
+                            selected={{ from: formData.seasonStartDate, to: formData.seasonEndDate }}
+                            onSelect={(range: DateRange | undefined) => {
+                              handleInputChange('seasonStartDate', range?.from);
+                              handleInputChange('seasonEndDate', range?.to);
+                            }}
+                            numberOfMonths={2}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="practicesPerWeek">Entraînements / semaine</Label>
@@ -256,17 +281,37 @@ export default function Home() {
 
                 {/* Playoffs */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
-                  <legend className="text-sm font-medium text-primary px-3 bg-background">Séries (Playoffs) (29 mars - 12 mai 2026)</legend>
+                  <legend className="text-sm font-medium text-primary px-3 bg-background">Séries (Playoffs)</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="playoffWeeks">Durée (semaines)</Label>
-                      <Input
-                        id="playoffWeeks"
-                        type="number"
-                        value={formData.playoffWeeks}
-                        onChange={(e) => handleInputChange('playoffWeeks', e.target.value)}
-                        data-testid="input-playoff-weeks"
-                      />
+                       <Label>Durée des séries</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className="w-full justify-start text-left font-normal"
+                            data-testid="date-range-playoffs"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.playoffStartDate && formData.playoffEndDate ? (
+                              `${format(formData.playoffStartDate, 'd MMM yyyy', { locale: fr })} - ${format(formData.playoffEndDate, 'd MMM yyyy', { locale: fr })}`
+                            ) : (
+                              <span>Choisir une plage de dates</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="range"
+                            selected={{ from: formData.playoffStartDate, to: formData.playoffEndDate }}
+                            onSelect={(range: DateRange | undefined) => {
+                              handleInputChange('playoffStartDate', range?.from);
+                              handleInputChange('playoffEndDate', range?.to);
+                            }}
+                            numberOfMonths={2}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="playoffFinalDays">Jours de finales</Label>

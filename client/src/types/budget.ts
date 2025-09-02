@@ -1,4 +1,4 @@
-// [src/types/budget.ts] - Version 1.0 - Centralisation des types de données du budget
+// [client/src/types/budget.ts] - Version 2.0 - Remplacement des durées par des plages de dates
 
 export interface BudgetFormData {
   discipline: string;
@@ -6,12 +6,16 @@ export interface BudgetFormData {
   category: string;
   headCoachRate: number;
   assistantCoachRate: number;
-  seasonWeeks: number;
+  // REMPLACÉ : seasonWeeks est maintenant calculé à partir de ces dates.
+  seasonStartDate: Date | undefined;
+  seasonEndDate: Date | undefined;
   practicesPerWeek: number;
   practiceDuration: number;
   numGames: number;
   gameDuration: number;
-  playoffWeeks: number;
+  // REMPLACÉ : playoffWeeks est maintenant calculé à partir de ces dates.
+  playoffStartDate: Date | undefined;
+  playoffEndDate: Date | undefined;
   playoffFinalDays: number;
   playoffFinalsDuration: number;
   tournamentBonus: number;
