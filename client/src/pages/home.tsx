@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 27.0 - Ajout du lien vers la page de rapport
+// [client/src/pages/home.tsx] - Version 27.0 - Ajout du lien vsers la page de rapport
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter'; // Import du composant Link
