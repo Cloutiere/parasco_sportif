@@ -1,18 +1,18 @@
-// [client/src/App.tsx] - Version 3.0 - Mise à jour de l'import de HomePage et Toaster
+// [client/src/App.tsx] - Version 2.0 - Ajout de la route pour la page de rapport
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner"; // Import du Toaster de 'sonner'
+import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
-import ReportPage from "@/pages/report";
+import ReportPage from "@/pages/report"; // Import de la nouvelle page
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/report" component={ReportPage} />
+      <Route path="/report" component={ReportPage} /> {/* Ajout de la nouvelle route */}
       <Route component={NotFound} />
     </Switch>
   );
@@ -22,8 +22,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {/* Le Toaster de 'sonner' est plus simple et n'a pas besoin d'être à l'intérieur d'un autre composant */}
-        <Toaster richColors />
+        <Toaster />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>
