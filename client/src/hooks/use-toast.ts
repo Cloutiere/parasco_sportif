@@ -1,4 +1,3 @@
-// [client/src/hooks/use-toast.ts] - Version 1.0 - Restauration du système de notifications local
 import * as React from "react"
 
 import type {

@@ -1,4 +1,3 @@
-// [client/src/components/ui/toaster.tsx] - Version 1.0 - Restauration du système de notifications local
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,

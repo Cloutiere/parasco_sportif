@@ -1,4 +1,3 @@
-// [client/src/components/ui/toast.tsx] - Version 1.0 - Restauration du système de notifications local
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"

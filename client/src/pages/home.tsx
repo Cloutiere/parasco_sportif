@@ -1,4 +1,3 @@
-// [client/src/pages/home.tsx] - Version 5.0 - Refactorisation visuelle et restauration du système de notifications
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,12 +5,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings, BarChart3, Calculator, PlusCircle, Trash2, Calendar, Archive } from 'lucide-react';
+import { Settings, BarChart3, Calculator, PlusCircle, Trash2, FileText, Calendar } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
+import { toast } from 'sonner';
+import { Link } from 'wouter';
+import { 
+  Chart as ChartJS, 
+  ArcElement, 
+  Tooltip, 
   Legend,
   CategoryScale,
   LinearScale
@@ -21,14 +22,12 @@ import { Doughnut } from 'react-chartjs-2';
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { createBudgetModel, deleteBudgetModel, getBudgetModels } from '../lib/api-client';
 import type { BudgetModel, InsertBudgetModel } from '@shared/schema';
-import { useToast } from '../hooks/use-toast'; // Remplacement de sonner par notre hook
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
 export default function Home() {
   const queryClient = useQueryClient();
-  const { toast } = useToast(); // Utilisation de notre hook
   const [modelName, setModelName] = useState('');
   const [loadedModelId, setLoadedModelId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -48,49 +47,32 @@ export default function Home() {
   const createModelMutation = useMutation({
     mutationFn: createBudgetModel,
     onSuccess: (newModel) => {
-      toast({
-        title: 'Succès',
-        description: `Modèle "${newModel.name}" créé avec succès !`,
-      });
+      toast.success(`Modèle "${newModel.name}" créé avec succès !`);
       queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
       setModelName('');
     },
     onError: () => {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Erreur lors de la création du modèle.',
-      });
+      toast.error('Erreur lors de la création du modèle.');
     },
   });
 
   const deleteModelMutation = useMutation({
     mutationFn: deleteBudgetModel,
     onSuccess: () => {
-      toast({
-        title: 'Succès',
-        description: 'Modèle supprimé avec succès.',
-      });
+      toast.success('Modèle supprimé avec succès.');
       queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
       resetForm();
       setLoadedModelId(null);
       setIsDeleteDialogOpen(false);
     },
     onError: () => {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Erreur lors de la suppression du modèle.',
-      });
+      toast.error('Erreur lors de la suppression du modèle.');
     },
   });
 
   const handleSaveModel = () => {
     if (!modelName.trim()) {
-      toast({
-        title: 'Attention',
-        description: 'Veuillez donner un nom au modèle.',
-      });
+      toast.warning('Veuillez donner un nom au modèle.');
       return;
     }
     const modelData: InsertBudgetModel = {
@@ -132,20 +114,14 @@ export default function Home() {
         transportationFee: Number(modelToLoad.transportationFee),
       });
       setLoadedModelId(modelToLoad.id);
-      toast({
-        title: 'Information',
-        description: `Modèle "${modelToLoad.name}" chargé.`,
-      });
+      toast.info(`Modèle "${modelToLoad.name}" chargé.`);
     }
   };
 
   const handleNewBudget = () => {
     resetForm();
     setLoadedModelId(null);
-    toast({
-      title: 'Information',
-      description: 'Nouveau formulaire de budget initialisé.',
-    });
+    toast.info('Nouveau formulaire de budget initialisé.');
   };
 
   // Chart data configuration
@@ -212,27 +188,33 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header restauré */}
+      {/* Header */}
       <header className="bg-primary text-primary-foreground shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center space-x-4">
-            <div className="bg-primary-foreground/10 p-3 rounded-lg">
-              <Calculator className="w-8 h-8 text-primary-foreground" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-primary-foreground/10 p-3 rounded-lg">
+                <Calculator className="w-8 h-8 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Calculateur de Budget d'Équipe Sportive</h1>
+                <p className="text-primary-foreground/80 mt-1">Planification budgétaire pour équipes sportives</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">Calculateur de Budget d'Équipe Sportive</h1>
-              <p className="text-primary-foreground/80 mt-1">Planification budgétaire pour équipes sportives</p>
-            </div>
+            <Button asChild variant="secondary" size="lg">
+              <Link href="/report">
+                <FileText className="mr-2 h-5 w-5" />
+                Générer Rapport
+              </Link>
+            </Button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Grille restaurée à 2 colonnes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-          {/* Colonne 1: Formulaire de configuration */}
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Budget Form */}
+          <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-xl font-semibold text-primary flex items-center space-x-2">
@@ -240,7 +222,7 @@ export default function Home() {
                   <span>Paramètres de Configuration</span>
                 </CardTitle>
               </CardHeader>
-
+              
               <CardContent className="p-6 space-y-6">
                 {/* Basic Team Information */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
@@ -374,7 +356,7 @@ export default function Home() {
                         id="seasonStartDate"
                         type="date"
                         value={formData.seasonStartDate?.toISOString().split('T')[0]}
-                        onChange={(e) => handleInputChange('seasonStartDate', e.target.value ? new Date(e.target.value) : undefined)}
+                        onChange={(e) => handleInputChange('seasonStartDate', new Date(e.target.value))}
                         data-testid="input-season-start"
                       />
                     </div>
@@ -384,7 +366,7 @@ export default function Home() {
                         id="seasonEndDate"
                         type="date"
                         value={formData.seasonEndDate?.toISOString().split('T')[0]}
-                        onChange={(e) => handleInputChange('seasonEndDate', e.target.value ? new Date(e.target.value) : undefined)}
+                        onChange={(e) => handleInputChange('seasonEndDate', new Date(e.target.value))}
                         data-testid="input-season-end"
                       />
                     </div>
@@ -394,7 +376,7 @@ export default function Home() {
                         id="playoffStartDate"
                         type="date"
                         value={formData.playoffStartDate?.toISOString().split('T')[0]}
-                        onChange={(e) => handleInputChange('playoffStartDate', e.target.value ? new Date(e.target.value) : undefined)}
+                        onChange={(e) => handleInputChange('playoffStartDate', new Date(e.target.value))}
                         data-testid="input-playoff-start"
                       />
                     </div>
@@ -404,7 +386,7 @@ export default function Home() {
                         id="playoffEndDate"
                         type="date"
                         value={formData.playoffEndDate?.toISOString().split('T')[0]}
-                        onChange={(e) => handleInputChange('playoffEndDate', e.target.value ? new Date(e.target.value) : undefined)}
+                        onChange={(e) => handleInputChange('playoffEndDate', new Date(e.target.value))}
                         data-testid="input-playoff-end"
                       />
                     </div>
@@ -537,101 +519,8 @@ export default function Home() {
             </Card>
           </div>
 
-          {/* Colonne 2: Gestion des modèles et résultats */}
+          {/* Results and Model Management */}
           <div className="space-y-6">
-
-            {/* Model Management - Déplacé ici */}
-            <Card>
-              <CardHeader className="border-b border-border">
-                <CardTitle className="text-xl font-semibold text-primary flex items-center space-x-2">
-                  <Archive className="w-5 h-5" />
-                  <span>Gestion des Modèles</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="model-name">Nom du nouveau modèle</Label>
-                  <Input
-                    id="model-name"
-                    placeholder="Ex: U16 F D1 2025-2026"
-                    value={modelName}
-                    onChange={(e) => setModelName(e.target.value)}
-                    disabled={createModelMutation.isPending}
-                    data-testid="input-model-name"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={handleSaveModel}
-                    disabled={createModelMutation.isPending}
-                    className="flex-1"
-                    data-testid="button-save-model"
-                  >
-                    {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
-                  </Button>
-                  {loadedModelId && (
-                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="icon" data-testid="button-delete-model">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Supprimer le modèle ?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Cette action est irréversible et supprimera définitivement ce modèle de
-                            budget.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Annuler</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => {
-                              if (loadedModelId) {
-                                deleteModelMutation.mutate(loadedModelId);
-                              }
-                            }}
-                            disabled={deleteModelMutation.isPending}
-                          >
-                            {deleteModelMutation.isPending ? 'Suppression...' : 'Confirmer'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-                <div className="border-t pt-4 space-y-2">
-                  <Label>Charger un modèle existant</Label>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      onValueChange={handleLoadModel}
-                      disabled={isLoadingModels || isErrorModels || !models?.length}
-                    >
-                      <SelectTrigger data-testid="select-load-model">
-                        <SelectValue placeholder="Sélectionner un modèle..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {isLoadingModels && <SelectItem value="loading">Chargement...</SelectItem>}
-                        {isErrorModels && (
-                          <SelectItem value="error">Erreur de chargement</SelectItem>
-                        )}
-                        {models?.map((model) => (
-                          <SelectItem key={model.id} value={model.id}>
-                            {model.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="icon" onClick={handleNewBudget} data-testid="button-new-budget">
-                      <PlusCircle className="h-4 w-4" />
-                      <span className="sr-only">Nouveau Budget</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Budget Breakdown Table */}
             <Card>
               <CardHeader className="border-b border-border">
@@ -640,7 +529,7 @@ export default function Home() {
                   <span>Répartition des Coûts</span>
                 </CardTitle>
               </CardHeader>
-
+              
               <CardContent className="p-6">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-sm">
@@ -725,7 +614,7 @@ export default function Home() {
                   <span>Visualisation du Budget</span>
                 </CardTitle>
               </CardHeader>
-
+              
               <CardContent className="p-6">
                 <div className="bg-muted/30 rounded-lg p-4 h-80">
                   <Doughnut data={chartData} options={chartOptions} data-testid="chart-budget" />
@@ -733,6 +622,94 @@ export default function Home() {
               </CardContent>
             </Card>
 
+            {/* Model Management */}
+            <Card>
+              <CardHeader className="border-b border-border">
+                <CardTitle className="text-xl font-semibold text-primary">Gestion des Modèles</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="model-name">Nom du nouveau modèle</Label>
+                  <Input
+                    id="model-name"
+                    placeholder="Ex: U16 F D1 2025-2026"
+                    value={modelName}
+                    onChange={(e) => setModelName(e.target.value)}
+                    disabled={createModelMutation.isPending}
+                    data-testid="input-model-name"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleSaveModel}
+                    disabled={createModelMutation.isPending}
+                    className="flex-1"
+                    data-testid="button-save-model"
+                  >
+                    {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
+                  </Button>
+                  {loadedModelId && (
+                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon" data-testid="button-delete-model">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer le modèle ?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action est irréversible et supprimera définitivement ce modèle de
+                            budget.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              if (loadedModelId) {
+                                deleteModelMutation.mutate(loadedModelId);
+                              }
+                            }}
+                            disabled={deleteModelMutation.isPending}
+                          >
+                            {deleteModelMutation.isPending ? 'Suppression...' : 'Confirmer'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+                <div className="border-t pt-4 space-y-2">
+                  <Label>Charger un modèle existant</Label>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      onValueChange={handleLoadModel}
+                      disabled={isLoadingModels || isErrorModels || !models?.length}
+                    >
+                      <SelectTrigger data-testid="select-load-model">
+                        <SelectValue placeholder="Sélectionner un modèle..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {isLoadingModels && <SelectItem value="loading">Chargement...</SelectItem>}
+                        {isErrorModels && (
+                          <SelectItem value="error">Erreur de chargement</SelectItem>
+                        )}
+                        {models?.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="icon" onClick={handleNewBudget} data-testid="button-new-budget">
+                      <PlusCircle className="h-4 w-4" />
+                      <span className="sr-only">Nouveau Budget</span>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
