@@ -1,5 +1,5 @@
-// [client/src/pages/home.tsx] - Version 30.0 - Implémentation de la logique de mise à jour (Upsert)
-import { useState, useEffect, useMemo } from 'react'; // Ajout de useMemo
+// [client/src/pages/home.tsx] - Version 32.0 - Synchronisation du cache du rapport après suppression
+import { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +17,7 @@ import { fr } from 'date-fns/locale';
 
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
-import { createBudgetModel, getBudgetModels, updateBudgetModel } from '../lib/api-client'; // Ajout de updateBudgetModel
+import { createBudgetModel, getBudgetModels, updateBudgetModel } from '../lib/api-client';
 import { exportToExcel } from '../lib/excel-export';
 import type { InsertBudgetModel, BudgetModel } from '@shared/schema';
 import { useToast } from '../hooks/use-toast';
@@ -71,6 +71,7 @@ export default function Home() {
         description: 'Modèle sauvegardé avec succès !',
       });
       queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
+      queryClient.invalidateQueries({ queryKey: ['detailedReport'] });
     },
     onError: () => {
       toast({
@@ -81,7 +82,6 @@ export default function Home() {
     },
   });
 
-  // NOUVELLE MUTATION pour la mise à jour
   const updateModelMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<InsertBudgetModel> }) =>
       updateBudgetModel(id, payload),
@@ -91,6 +91,7 @@ export default function Home() {
         description: 'Modèle mis à jour avec succès !',
       });
       queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
+      queryClient.invalidateQueries({ queryKey: ['detailedReport'] });
     },
     onError: () => {
       toast({
@@ -118,6 +119,7 @@ export default function Home() {
       });
       setLoadedModelId(null);
       queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
+      queryClient.invalidateQueries({ queryKey: ['detailedReport'] }); // Invalidation du cache du rapport
     },
     onError: () => {
       toast({
@@ -136,7 +138,6 @@ export default function Home() {
     }
   };
 
-  // MISE À JOUR de la logique de sauvegarde
   const handleSaveModel = () => {
     const payload: InsertBudgetModel = {
       ...formData,
@@ -149,10 +150,8 @@ export default function Home() {
     };
 
     if (existingModel) {
-      // Si le modèle existe, on le met à jour
       updateModelMutation.mutate({ id: existingModel.id, payload });
     } else {
-      // Sinon, on le crée
       createModelMutation.mutate(payload);
     }
   };
@@ -170,10 +169,8 @@ export default function Home() {
     setNumberOfTeams(model.numberOfTeams);
     setLoadedModelId(modelId);
 
-    // Convertir les chaînes de l'API en types attendus par le formulaire
     setFormData({
       ...model,
-      // Les champs numériques 'decimal' arrivent comme des strings, il faut les convertir
       headCoachRate: Number(model.headCoachRate),
       assistantCoachRate: Number(model.assistantCoachRate),
       employerContributionRate: Number(model.employerContributionRate),
@@ -183,7 +180,6 @@ export default function Home() {
       tournamentBonus: Number(model.tournamentBonus),
       federationFee: Number(model.federationFee),
       transportationFee: Number(model.transportationFee),
-      // Convertir les dates ISO string en objets Date
       seasonStartDate: model.seasonStartDate ? new Date(model.seasonStartDate) : null,
       seasonEndDate: model.seasonEndDate ? new Date(model.seasonEndDate) : null,
       playoffStartDate: model.playoffStartDate ? new Date(model.playoffStartDate) : null,
@@ -236,7 +232,7 @@ export default function Home() {
           results.costPlayoffPractices,
           results.costPlayoffFinals,
           results.tournamentBonus,
-          formData.transportationFee, // NOTE: Utilisation de formData car c'est une entrée directe
+          formData.transportationFee,
           results.federationFee,
         ],
         backgroundColor: [
@@ -285,7 +281,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header ... */}
       <header className="bg-primary text-primary-foreground shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center space-x-4">
@@ -302,7 +297,6 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Budget Form */}
           <div className="space-y-6">
             <Card>
               <CardHeader className="border-b border-border">
@@ -360,7 +354,6 @@ export default function Home() {
                 </div>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-4">
-                    {/* MISE À JOUR DU BOUTON DE SAUVEGARDE */}
                     <Button onClick={handleSaveModel} disabled={isSaving || !generatedModelName} className="w-full">
                       {isSaving
                         ? existingModel
@@ -405,7 +398,6 @@ export default function Home() {
               </CardHeader>
 
               <CardContent className="p-6 space-y-6">
-                {/* ... fieldsets ... */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">
                     Informations de l'Équipe
@@ -496,6 +488,9 @@ export default function Home() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem key="Atome" value="Atome">
+                            Atome
+                          </SelectItem>
                           <SelectItem key="Benjamin" value="Benjamin">
                             Benjamin
                           </SelectItem>
@@ -550,7 +545,6 @@ export default function Home() {
                   </div>
                 </fieldset>
 
-                {/* Regular Season */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Saison Régulière</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -636,7 +630,6 @@ export default function Home() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    {/* ... */}
                     <div className="md:col-span-2 text-center bg-muted/50 p-2 rounded-md">
                       <p className="text-sm text-muted-foreground">
                         Durée calculée :{' '}
@@ -690,7 +683,6 @@ export default function Home() {
                   </div>
                 </fieldset>
 
-                {/* Playoffs */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Séries (Playoffs)</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -779,7 +771,6 @@ export default function Home() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    {/* ... */}
                     <div className="md:col-span-2 text-center bg-muted/50 p-2 rounded-md">
                       <p className="text-sm text-muted-foreground">
                         Durée calculée :{' '}
@@ -868,7 +859,6 @@ export default function Home() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {/* --- SAISON RÉGULIÈRE --- */}
                       <tr className="bg-muted/30">
                         <th colSpan={2} className="text-left py-2 px-4 font-bold text-primary">
                           Saison Régulière
@@ -913,7 +903,6 @@ export default function Home() {
                         </td>
                       </tr>
 
-                      {/* --- SÉRIES --- */}
                       <tr className="bg-muted/30">
                         <th colSpan={2} className="text-left py-2 px-4 font-bold text-primary">
                           Séries (Playoffs)
@@ -940,7 +929,6 @@ export default function Home() {
                         </td>
                       </tr>
 
-                      {/* --- TOTAL --- */}
                       <tr className="bg-primary text-primary-foreground font-bold text-lg">
                         <td className="py-4 px-4">BUDGET TOTAL</td>
                         <td className="py-4 px-4 text-right font-mono" data-testid="text-grand-total">

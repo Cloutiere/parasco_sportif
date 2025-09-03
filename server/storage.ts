@@ -276,10 +276,11 @@ export class ReplitDbStorage implements IStorage {
 
     // Définir l'ordre de tri personnalisé pour le niveau
     const levelOrder: { [key: string]: number } = {
-      'Benjamin': 1,
-      'Cadet': 2,
-      'Juvénile': 3,
-      'Tous': 4,
+      'Atome': 1,
+      'Benjamin': 2,
+      'Cadet': 3,
+      'Juvénile': 4,
+      'Tous': 5,
     };
 
     for (const model of allModels) {
