@@ -1,4 +1,4 @@
-// [shared/schema.ts] - Version 2.0 - Ajout du genre et de l'année scolaire
+// [shared/schema.ts] - Version 3.0 - Correction du typage des dates pour la validation API
 import { sql } from "drizzle-orm";
 import {
   decimal,
@@ -23,8 +23,8 @@ export const budgetModels = pgTable("budget_models", {
   numberOfTeams: integer("number_of_teams").notNull().default(1),
 
   // Champs dérivés de BudgetFormData
-  seasonYear: text("season_year").notNull(), // NOUVEAU
-  gender: text("gender").notNull(), // NOUVEAU
+  seasonYear: text("season_year").notNull(),
+  gender: text("gender").notNull(),
   discipline: text("discipline").notNull(),
   level: text("level").notNull(),
   category: text("category").notNull(),
@@ -66,7 +66,13 @@ export const budgetModels = pgTable("budget_models", {
 });
 
 // Schéma pour l'insertion/mise à jour
-export const insertBudgetModelSchema = createInsertSchema(budgetModels).omit({
+// MODIFICATION : Utilisation de z.coerce.date() pour que Zod accepte les chaînes ISO du frontend
+export const insertBudgetModelSchema = createInsertSchema(budgetModels, {
+  seasonStartDate: z.coerce.date().optional().nullable(),
+  seasonEndDate: z.coerce.date().optional().nullable(),
+  playoffStartDate: z.coerce.date().optional().nullable(),
+  playoffEndDate: z.coerce.date().optional().nullable(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

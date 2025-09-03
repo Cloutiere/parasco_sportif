@@ -1,6 +1,7 @@
-// [client/src/pages/home.tsx] - Version 26.0 - Nom de modèle généré automatiquement
+// [client/src/pages/home.tsx] - Version 27.0 - Ajout du lien vers la page de rapport
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'wouter'; // Import du composant Link
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Settings, BarChart3, Calculator, CalendarIcon, Archive } from 'lucide-react';
+import { Settings, BarChart3, Calculator, CalendarIcon, Archive, FileText } from 'lucide-react'; // Import de FileText
 import {
   Chart as ChartJS,
   ArcElement,
@@ -269,13 +270,21 @@ export default function Home() {
                     onChange={(e) => setNumberOfTeams(Number(e.target.value))}
                   />
                 </div>
-                <Button
-                  onClick={handleSaveModel}
-                  disabled={createModelMutation.isPending || !generatedModelName}
-                  className="w-full"
-                >
-                  {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
-                </Button>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    onClick={handleSaveModel}
+                    disabled={createModelMutation.isPending || !generatedModelName}
+                    className="w-full"
+                  >
+                    {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href="/report">
+                      <FileText className="mr-2 h-4 w-4" />
+                      Voir le Rapport
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 

@@ -1,4 +1,4 @@
-// [server/routes.ts] - Version 1.0 - Implémentation des endpoints CRUD pour les Budget Models
+// [server/routes.ts] - Version 2.0 - Ajout de l'endpoint pour le rapport par discipline
 import { insertBudgetModelSchema } from "@shared/schema";
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
@@ -8,6 +8,19 @@ import { storage } from "./storage";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware essentiel pour parser les corps de requête JSON
   app.use(express.json());
+
+  // --- Reports API Routes ---
+
+  // GET /api/reports/by-discipline: Récupère le rapport agrégé des coûts par discipline
+  app.get("/api/reports/by-discipline", async (req, res) => {
+    try {
+      const summary = await storage.getBudgetSummaryByDiscipline();
+      res.status(200).json(summary);
+    } catch (error) {
+      console.error("Error generating discipline report:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
 
   // --- Budget Models API Routes ---
 

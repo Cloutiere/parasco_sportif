@@ -1,4 +1,4 @@
-// [client/src/lib/api-client.ts] - Version 2.0 - Ajout de la récupération des modèles de budget
+// [client/src/lib/api-client.ts] - Version 3.0 - Ajout de la récupération du rapport par discipline
 import type { BudgetModel, InsertBudgetModel } from '@shared/schema';
 import { apiRequest } from './queryClient';
 
@@ -18,5 +18,14 @@ export async function createBudgetModel(data: InsertBudgetModel): Promise<Budget
  */
 export async function getBudgetModels(): Promise<BudgetModel[]> {
   const res = await apiRequest('GET', '/api/budget-models');
+  return await res.json();
+}
+
+/**
+ * Récupère le rapport agrégé des coûts par discipline.
+ * @returns Une promesse résolue avec le rapport.
+ */
+export async function getDisciplineReport(): Promise<{ discipline: string; totalCost: number }[]> {
+  const res = await apiRequest('GET', '/api/reports/by-discipline');
   return await res.json();
 }
