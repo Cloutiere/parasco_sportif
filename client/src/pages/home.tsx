@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 22.0 - Correction de la largeur du champ Part employeur
+// [client/src/pages/home.tsx] - Version 23.0 - Ajout des frais de transport et restructuration des résultats
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,7 +62,8 @@ export default function Home() {
       'Matchs (Saison)',
       'Entraînements (Séries)',
       'Finales (Séries)',
-      'Bonus Tournoi',
+      'Frais Tournoi',
+      'Frais de transport',
       'Frais Fédération',
     ],
     datasets: [
@@ -73,6 +74,7 @@ export default function Home() {
           results.costPlayoffPractices,
           results.costPlayoffFinals,
           results.tournamentBonus,
+          formData.transportationFee, // NOTE: Utilisation de formData car c'est une entrée directe
           results.federationFee,
         ],
         backgroundColor: [
@@ -82,6 +84,7 @@ export default function Home() {
           'hsl(160, 60%, 55%)',
           'hsl(145, 50%, 60%)',
           'hsl(130, 40%, 65%)',
+          'hsl(115, 40%, 70%)',
         ],
         borderWidth: 2,
         borderColor: '#fff',
@@ -207,7 +210,6 @@ export default function Home() {
                 </fieldset>
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Entraîneurs</legend>
-                  {/* MODIFIÉ : Utilisation d'une seule grille pour les trois champs pour un alignement parfait */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="headCoachRate">Taux horaire Chef ($/h)</Label>
@@ -497,10 +499,9 @@ export default function Home() {
 
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Autres Coûts</legend>
-                  {/* ... Contenu inchangé ... */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="tournamentBonus">Bonus Tournoi ($)</Label>
+                      <Label htmlFor="tournamentBonus">Frais Tournoi ($)</Label>
                       <Input
                         id="tournamentBonus"
                         type="number"
@@ -519,6 +520,16 @@ export default function Home() {
                         data-testid="input-federation-fee"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="transportationFee">Frais de transport ($)</Label>
+                      <Input
+                        id="transportationFee"
+                        type="number"
+                        value={formData.transportationFee}
+                        onChange={(e) => handleInputChange('transportationFee', e.target.value)}
+                        data-testid="input-transportation-fee"
+                      />
+                    </div>
                   </div>
                 </fieldset>
               </CardContent>
@@ -526,7 +537,6 @@ export default function Home() {
           </div>
 
           <div className="space-y-6">
-            {/* ... Results cards ... */}
             <Card>
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-xl font-semibold text-primary flex items-center space-x-2">
@@ -536,7 +546,6 @@ export default function Home() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="overflow-x-auto">
-                  {/* ... Contenu du tableau inchangé ... */}
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b border-border">
@@ -545,6 +554,12 @@ export default function Home() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
+                      {/* --- SAISON RÉGULIÈRE --- */}
+                      <tr className="bg-muted/30">
+                        <th colSpan={2} className="text-left py-2 px-4 font-bold text-primary">
+                          Saison Régulière
+                        </th>
+                      </tr>
                       <tr className="hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4">Entraînements (Saison régulière)</td>
                         <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-season-practices">
@@ -556,6 +571,39 @@ export default function Home() {
                         <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-season-games">
                           {formatCurrency(results.costSeasonGames)}
                         </td>
+                      </tr>
+                      <tr className="hover:bg-muted/50 transition-colors">
+                        <td className="py-3 px-4">Frais Tournoi</td>
+                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-tournament">
+                          {formatCurrency(results.tournamentBonus)}
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-muted/50 transition-colors">
+                        <td className="py-3 px-4">Frais de transport</td>
+                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-transportation">
+                          {formatCurrency(formData.transportationFee)}
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-muted/50 transition-colors">
+                        <td className="py-3 px-4">Frais de Fédération (RSEQ)</td>
+                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-federation">
+                          {formatCurrency(results.federationFee)}
+                        </td>
+                      </tr>
+                      <tr className="bg-muted/70 font-medium">
+                        <td className="py-3 px-4">
+                          <strong>Sous-total Saison Régulière</strong>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold" data-testid="text-subtotal-season">
+                          {formatCurrency(results.subTotalRegularSeason)}
+                        </td>
+                      </tr>
+
+                      {/* --- SÉRIES --- */}
+                      <tr className="bg-muted/30">
+                        <th colSpan={2} className="text-left py-2 px-4 font-bold text-primary">
+                          Séries (Playoffs)
+                        </th>
                       </tr>
                       <tr className="hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4">Entraînements (Séries)</td>
@@ -571,24 +619,14 @@ export default function Home() {
                       </tr>
                       <tr className="bg-muted/70 font-medium">
                         <td className="py-3 px-4">
-                          <strong>Sous-total Salaires Entraîneurs</strong>
+                          <strong>Sous-total Séries</strong>
                         </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold" data-testid="text-total-coaching">
-                          {formatCurrency(results.totalCoachingSalaries)}
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4">Bonus Tournoi</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-tournament">
-                          {formatCurrency(results.tournamentBonus)}
+                        <td className="py-3 px-4 text-right font-mono font-bold" data-testid="text-subtotal-playoffs">
+                          {formatCurrency(results.subTotalPlayoffs)}
                         </td>
                       </tr>
-                      <tr className="hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4">Frais de Fédération (RSEQ)</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-federation">
-                          {formatCurrency(results.federationFee)}
-                        </td>
-                      </tr>
+
+                      {/* --- TOTAL --- */}
                       <tr className="bg-primary text-primary-foreground font-bold text-lg">
                         <td className="py-4 px-4">BUDGET TOTAL</td>
                         <td className="py-4 px-4 text-right font-mono" data-testid="text-grand-total">

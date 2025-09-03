@@ -1,25 +1,24 @@
-// [client/src/types/budget.ts] - Version 6.0 - Réintroduction d'un taux de charges patronales modifiable
-
+// [client/src/types/budget.ts] - Version 7.0 - Ajout des frais de transport et des sous-totaux
 export interface BudgetFormData {
   discipline: string;
   level: string;
   category: string;
   headCoachRate: number;
   assistantCoachRate: number;
-  // NOUVEAU : Taux des charges patronales (en pourcentage).
   employerContributionRate: number;
-  seasonStartDate: Date | undefined;
-  seasonEndDate: Date | undefined;
+  seasonStartDate?: Date;
+  seasonEndDate?: Date;
   practicesPerWeek: number;
   practiceDuration: number;
   numGames: number;
   gameDuration: number;
-  playoffStartDate: Date | undefined;
-  playoffEndDate: Date | undefined;
+  playoffStartDate?: Date;
+  playoffEndDate?: Date;
   playoffFinalDays: number;
   playoffFinalsDuration: number;
   tournamentBonus: number;
   federationFee: number;
+  transportationFee: number; // NOUVEAU
 }
 
 export interface BudgetResults {
@@ -27,10 +26,11 @@ export interface BudgetResults {
   costSeasonGames: number;
   costPlayoffPractices: number;
   costPlayoffFinals: number;
-  totalCoachingSalaries: number;
   tournamentBonus: number;
   federationFee: number;
   grandTotal: number;
   activeSeasonWeeks: number;
   activePlayoffWeeks: number;
+  subTotalRegularSeason: number; // NOUVEAU
+  subTotalPlayoffs: number; // NOUVEAU
 }

@@ -1,5 +1,4 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 8.0 - Rendre le taux de charges patronales dynamique
-
+// [client/src/hooks/useBudgetCalculator.ts] - Version 9.0 - Calcul des sous-totaux saison/séries et frais de transport
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
 import { calculateActiveWeeks } from '../lib/date-utils';
@@ -14,7 +13,6 @@ const defaultInitialState: BudgetFormData = {
   category: 'D4',
   headCoachRate: 35,
   assistantCoachRate: 27,
-  // NOUVEAU : Valeur par défaut pour les charges patronales.
   employerContributionRate: 13.4,
   seasonStartDate: startOfWeek(new Date('2025-09-14'), { weekStartsOn: 0 }),
   seasonEndDate: startOfWeek(new Date('2026-03-23'), { weekStartsOn: 0 }),
@@ -28,6 +26,7 @@ const defaultInitialState: BudgetFormData = {
   playoffFinalsDuration: 8,
   tournamentBonus: 500,
   federationFee: 1148,
+  transportationFee: 0,
 };
 
 /**
@@ -44,16 +43,16 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     costSeasonGames: 0,
     costPlayoffPractices: 0,
     costPlayoffFinals: 0,
-    totalCoachingSalaries: 0,
     tournamentBonus: 0,
     federationFee: 0,
     grandTotal: 0,
     activeSeasonWeeks: 0,
     activePlayoffWeeks: 0,
+    subTotalRegularSeason: 0,
+    subTotalPlayoffs: 0,
   });
 
   const calculateBudget = useCallback(() => {
-    // MODIFIÉ : Le multiplicateur est désormais calculé dynamiquement à partir de l'état du formulaire.
     const salaryMultiplier = 1 + formData.employerContributionRate / 100;
 
     const activeSeasonWeeks = calculateActiveWeeks(formData.seasonStartDate, formData.seasonEndDate);
@@ -61,13 +60,12 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
 
     const totalCoachRatePerHour = formData.headCoachRate + formData.assistantCoachRate;
 
+    // Calculs des coûts individuels
     const totalPracticeHoursSeason = activeSeasonWeeks * formData.practicesPerWeek * formData.practiceDuration;
     const costSeasonPractices = totalPracticeHoursSeason * totalCoachRatePerHour * salaryMultiplier;
 
     const totalGameHoursSeason = formData.numGames * formData.gameDuration;
     const costSeasonGames = totalGameHoursSeason * totalCoachRatePerHour * salaryMultiplier;
-
-
 
     const totalPracticeHoursPlayoffs = activePlayoffWeeks * formData.practicesPerWeek * formData.practiceDuration;
     const costPlayoffPractices = totalPracticeHoursPlayoffs * totalCoachRatePerHour * salaryMultiplier;
@@ -75,21 +73,30 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     const totalPlayoffFinalHours = formData.playoffFinalDays * formData.playoffFinalsDuration;
     const costPlayoffFinals = totalPlayoffFinalHours * totalCoachRatePerHour * salaryMultiplier;
 
-    const totalCoachingSalaries = costSeasonPractices + costSeasonGames + costPlayoffPractices + costPlayoffFinals;
+    // Calcul des nouveaux sous-totaux
+    const subTotalPlayoffs = costPlayoffPractices + costPlayoffFinals;
+    const subTotalRegularSeason =
+      costSeasonPractices +
+      costSeasonGames +
+      formData.tournamentBonus +
+      formData.transportationFee +
+      formData.federationFee;
 
-    const grandTotal = totalCoachingSalaries + formData.tournamentBonus + formData.federationFee;
+    // Calcul du total général
+    const grandTotal = subTotalRegularSeason + subTotalPlayoffs;
 
     setResults({
       costSeasonPractices,
       costSeasonGames,
       costPlayoffPractices,
       costPlayoffFinals,
-      totalCoachingSalaries,
       tournamentBonus: formData.tournamentBonus,
       federationFee: formData.federationFee,
       grandTotal,
       activeSeasonWeeks,
       activePlayoffWeeks,
+      subTotalRegularSeason,
+      subTotalPlayoffs,
     });
   }, [formData]);
 
@@ -102,7 +109,7 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
 
     setFormData(prev => ({
       ...prev,
-      [field]: isNumericField ? Number(value) : value
+      [field]: isNumericField ? Number(value) : value,
     }));
   }, []);
 
