@@ -1,4 +1,6 @@
-// [client/src/pages/home.tsx] - Version 23.0 - Ajout des frais de transport et restructuration des résultats
+// [client/src/pages/home.tsx] - Version 24.0 - Implémentation de la sauvegarde de modèle via useMutation
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Settings, BarChart3, Calculator, CalendarIcon } from 'lucide-react';
+import { Settings, BarChart3, Calculator, CalendarIcon, Archive } from 'lucide-react';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -16,17 +18,58 @@ import {
   LinearScale,
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { format, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useState } from 'react';
+
+import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
+import { createBudgetModel } from '../lib/api-client';
+import type { InsertBudgetModel } from '@shared/schema';
+import { useToast } from '../hooks/use-toast';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
 export default function Home() {
   const { formData, results, handleInputChange, formatCurrency } = useBudgetCalculator();
   const [openPopover, setOpenPopover] = useState<string | null>(null);
+  const [modelName, setModelName] = useState('');
+  const [numberOfTeams, setNumberOfTeams] = useState(1);
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const createModelMutation = useMutation({
+    mutationFn: (payload: InsertBudgetModel) => createBudgetModel(payload),
+    onSuccess: () => {
+      toast({
+        title: 'Succès',
+        description: 'Modèle sauvegardé avec succès !',
+      });
+      queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
+      setModelName('');
+    },
+    onError: () => {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Erreur lors de la sauvegarde du modèle.',
+      });
+    },
+  });
+
+  const handleSaveModel = () => {
+    // Format dates to ISO strings for backend compatibility
+    const payload: InsertBudgetModel = {
+      ...formData,
+      name: modelName,
+      numberOfTeams,
+      seasonStartDate: formData.seasonStartDate ? formData.seasonStartDate.toISOString() : null,
+      seasonEndDate: formData.seasonEndDate ? formData.seasonEndDate.toISOString() : null,
+      playoffStartDate: formData.playoffStartDate ? formData.playoffStartDate.toISOString() : null,
+      playoffEndDate: formData.playoffEndDate ? formData.playoffEndDate.toISOString() : null,
+    };
+    createModelMutation.mutate(payload);
+  };
 
   const rangeStyle = {
     backgroundColor: 'hsl(195, 100%, 95%)',
@@ -140,6 +183,43 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Budget Form */}
           <div className="space-y-6">
+            <Card>
+              <CardHeader className="border-b border-border">
+                <CardTitle className="text-xl font-semibold text-primary flex items-center space-x-2">
+                  <Archive className="w-5 h-5" />
+                  <span>Gestion du Modèle</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="modelName">Nom du modèle</Label>
+                  <Input
+                    id="modelName"
+                    value={modelName}
+                    onChange={(e) => setModelName(e.target.value)}
+                    placeholder="Ex: Benjamin D2 Handball 2024-2025"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="numberOfTeams">Nombre d’équipes</Label>
+                  <Input
+                    id="numberOfTeams"
+                    type="number"
+                    min="1"
+                    value={numberOfTeams}
+                    onChange={(e) => setNumberOfTeams(Number(e.target.value))}
+                  />
+                </div>
+                <Button
+                  onClick={handleSaveModel}
+                  disabled={createModelMutation.isPending || !modelName}
+                  className="w-full"
+                >
+                  {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-xl font-semibold text-primary flex items-center space-x-2">
