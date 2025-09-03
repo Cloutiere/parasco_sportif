@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 7.0 - Ouverture contextuelle du calendrier au bon mois
+// [client/src/pages/home.tsx] - Version 8.0 - Refactorisation de la sélection de dates
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,18 +18,13 @@ import {
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator'; 
-import { format } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
-// NOUVEAU : Importation de useState
-import { useState } from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
 export default function Home() {
-  const { formData, results, handleInputChange, handleDateRangeChange, formatCurrency } = useBudgetCalculator();
-
-  // NOUVEAU : État local pour contrôler le mois d'ouverture du calendrier.
-  const [calendarDefaultView, setCalendarDefaultView] = useState<Date | undefined>();
+  const { formData, results, handleInputChange, formatCurrency } = useBudgetCalculator();
 
   // ... (Chart data and options remain the same)
   const chartData = {
@@ -204,41 +199,66 @@ export default function Home() {
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Saison Régulière</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2 md:col-span-2">
-                      <div className="grid grid-cols-2 gap-4">
-                        <Label>Début de la saison</Label>
-                        <Label>Fin de la saison</Label>
-                      </div>
+
+                    {/* MODIFIÉ : Sélecteur de date de début */}
+                    <div className="space-y-2">
+                      <Label>Début de la saison</Label>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <div className="flex items-center w-full border border-input rounded-md text-sm font-normal cursor-pointer hover:bg-accent/50 transition-colors" data-testid="date-range-season-trigger">
-                            {/* MODIFIÉ : Ajout de onPointerDown pour la date de début */}
-                            <div 
-                              className="flex items-center p-2 w-1/2"
-                              onPointerDown={() => setCalendarDefaultView(formData.seasonStartDate)}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {formData.seasonStartDate ? format(formData.seasonStartDate, "d MMM yyyy", { locale: fr }) : <span>Choisir</span>}
-                            </div>
-                            {/* MODIFIÉ : Ajout de onPointerDown pour la date de fin */}
-                            <div 
-                              className="flex items-center p-2 w-1/2 border-l border-input"
-                              onPointerDown={() => setCalendarDefaultView(formData.seasonEndDate || formData.seasonStartDate)}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {formData.seasonEndDate ? format(formData.seasonEndDate, "d MMM yyyy", { locale: fr }) : <span>Choisir</span>}
-                            </div>
-                          </div>
+                          <Button
+                            variant={"outline"}
+                            className="w-full justify-start text-left font-normal"
+                            data-testid="date-start-season-trigger"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.seasonStartDate ? (
+                              format(formData.seasonStartDate, "d MMM yyyy", { locale: fr })
+                            ) : (
+                              <span>Choisir une date</span>
+                            )}
+                          </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
+                            mode="single"
+                            selected={formData.seasonStartDate}
+                            onSelect={(date) => handleInputChange('seasonStartDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined)}
+                            disabled={(date) =>
+                              formData.seasonEndDate ? date > formData.seasonEndDate : false
+                            }
                             initialFocus
-                            mode="range"
-                            // MODIFIÉ : Utilisation de l'état local pour le mois par défaut
-                            defaultMonth={calendarDefaultView}
-                            selected={{ from: formData.seasonStartDate, to: formData.seasonEndDate }}
-                            onSelect={(range) => handleDateRangeChange(range, 'seasonStartDate', 'seasonEndDate')}
-                            numberOfMonths={2}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* MODIFIÉ : Sélecteur de date de fin */}
+                    <div className="space-y-2">
+                      <Label>Fin de la saison</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className="w-full justify-start text-left font-normal"
+                            data-testid="date-end-season-trigger"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.seasonEndDate ? (
+                              format(formData.seasonEndDate, "d MMM yyyy", { locale: fr })
+                            ) : (
+                              <span>Choisir une date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.seasonEndDate}
+                            onSelect={(date) => handleInputChange('seasonEndDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined)}
+                            disabled={(date) =>
+                              formData.seasonStartDate ? date < formData.seasonStartDate : false
+                            }
+                            initialFocus
                           />
                         </PopoverContent>
                       </Popover>
@@ -298,41 +318,66 @@ export default function Home() {
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Séries (Playoffs)</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2 md:col-span-2">
-                       <div className="grid grid-cols-2 gap-4">
-                        <Label>Début des séries</Label>
-                        <Label>Fin des séries</Label>
-                      </div>
-                      <Popover>
+
+                    {/* MODIFIÉ : Sélecteur de date de début */}
+                    <div className="space-y-2">
+                      <Label>Début des séries</Label>
+                       <Popover>
                         <PopoverTrigger asChild>
-                           <div className="flex items-center w-full border border-input rounded-md text-sm font-normal cursor-pointer hover:bg-accent/50 transition-colors" data-testid="date-range-playoffs-trigger">
-                            {/* MODIFIÉ : Ajout de onPointerDown pour la date de début */}
-                            <div 
-                              className="flex items-center p-2 w-1/2"
-                              onPointerDown={() => setCalendarDefaultView(formData.playoffStartDate)}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {formData.playoffStartDate ? format(formData.playoffStartDate, "d MMM yyyy", { locale: fr }) : <span>Choisir</span>}
-                            </div>
-                            {/* MODIFIÉ : Ajout de onPointerDown pour la date de fin */}
-                            <div 
-                              className="flex items-center p-2 w-1/2 border-l border-input"
-                              onPointerDown={() => setCalendarDefaultView(formData.playoffEndDate || formData.playoffStartDate)}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {formData.playoffEndDate ? format(formData.playoffEndDate, "d MMM yyyy", { locale: fr }) : <span>Choisir</span>}
-                            </div>
-                          </div>
+                          <Button
+                            variant={"outline"}
+                            className="w-full justify-start text-left font-normal"
+                            data-testid="date-start-playoffs-trigger"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.playoffStartDate ? (
+                              format(formData.playoffStartDate, "d MMM yyyy", { locale: fr })
+                            ) : (
+                              <span>Choisir une date</span>
+                            )}
+                          </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
+                            mode="single"
+                            selected={formData.playoffStartDate}
+                            onSelect={(date) => handleInputChange('playoffStartDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined)}
+                            disabled={(date) =>
+                              formData.playoffEndDate ? date > formData.playoffEndDate : false
+                            }
                             initialFocus
-                            mode="range"
-                            // MODIFIÉ : Utilisation de l'état local pour le mois par défaut
-                            defaultMonth={calendarDefaultView}
-                            selected={{ from: formData.playoffStartDate, to: formData.playoffEndDate }}
-                            onSelect={(range) => handleDateRangeChange(range, 'playoffStartDate', 'playoffEndDate')}
-                            numberOfMonths={2}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* MODIFIÉ : Sélecteur de date de fin */}
+                    <div className="space-y-2">
+                      <Label>Fin des séries</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className="w-full justify-start text-left font-normal"
+                            data-testid="date-end-playoffs-trigger"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.playoffEndDate ? (
+                              format(formData.playoffEndDate, "d MMM yyyy", { locale: fr })
+                            ) : (
+                              <span>Choisir une date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.playoffEndDate}
+                            onSelect={(date) => handleInputChange('playoffEndDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined)}
+                            disabled={(date) =>
+                              formData.playoffStartDate ? date < formData.playoffStartDate : false
+                            }
+                            initialFocus
                           />
                         </PopoverContent>
                       </Popover>

@@ -1,10 +1,8 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 4.0 - Gestion des plages de dates
+// [client/src/hooks/useBudgetCalculator.ts] - Version 5.0 - Simplification de la gestion des dates
 
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
 import { calculateActiveWeeks } from '../lib/date-utils';
-// NOUVEAU : Importations pour la gestion des plages de dates
-import { type DateRange } from 'react-day-picker';
 import { startOfWeek } from 'date-fns';
 
 /**
@@ -53,7 +51,6 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
   });
 
   const calculateBudget = useCallback(() => {
-    // ... (la logique de calcul reste inchangée)
     const activeSeasonWeeks = calculateActiveWeeks(formData.seasonStartDate, formData.seasonEndDate);
     const activePlayoffWeeks = calculateActiveWeeks(formData.playoffStartDate, formData.playoffEndDate);
 
@@ -101,32 +98,6 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     }));
   }, []);
 
-  /**
-   * NOUVEAU : Gère la mise à jour d'une plage de dates en appliquant la logique métier
-   * de sélection au début de la semaine.
-   */
-  const handleDateRangeChange = useCallback(
-    (
-      range: DateRange | undefined,
-      startField: keyof BudgetFormData,
-      endField: keyof BudgetFormData
-    ) => {
-      const fromDate = range?.from;
-      const toDate = range?.to;
-
-      // Applique la règle : la date sélectionnée est toujours le début de la semaine (dimanche)
-      const newStartDate = fromDate ? startOfWeek(fromDate, { weekStartsOn: 0 }) : undefined;
-      const newEndDate = toDate ? startOfWeek(toDate, { weekStartsOn: 0 }) : newStartDate; // Si 'to' est indéfini, on le met égal à 'from'
-
-      setFormData(prev => ({
-        ...prev,
-        [startField]: newStartDate,
-        [endField]: newEndDate,
-      }));
-    },
-    []
-  );
-
   const formatCurrency = useCallback((value: number): string => {
     return value.toFixed(2).replace('.', ',') + ' $';
   }, []);
@@ -135,8 +106,6 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     formData,
     results,
     handleInputChange,
-    // NOUVEAU : Exposition de la nouvelle fonction
-    handleDateRangeChange,
     formatCurrency,
   };
 }
