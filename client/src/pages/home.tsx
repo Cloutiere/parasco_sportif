@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 28.0 - Ajout des champs pour l'école
+// [client/src/pages/home.tsx] - Version 28.0 - Ajouet des champs pour l'école
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter'; // Import du composant Link
