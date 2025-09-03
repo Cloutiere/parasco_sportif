@@ -69,6 +69,7 @@ export const budgetModels = pgTable("budget_models", {
 
 // Schéma pour l'insertion/mise à jour
 export const insertBudgetModelSchema = createInsertSchema(budgetModels, {
+  // Valeurs par défaut pour les champs école
   schoolName: z.string().default("Marie-Rivier"),
   schoolCode: z.string().default("055"),
   // Coercition pour les dates envoyées en chaîne ISO
