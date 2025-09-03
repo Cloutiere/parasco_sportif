@@ -1,4 +1,4 @@
-// [client/src/types/budget.ts] - Version 2.0 - Remplacement des durées par des plages de dates
+// [client/src/types/budget.ts] - Version 3.0 - Exposition des semaines actives
 
 export interface BudgetFormData {
   discipline: string;
@@ -6,14 +6,12 @@ export interface BudgetFormData {
   category: string;
   headCoachRate: number;
   assistantCoachRate: number;
-  // REMPLACÉ : seasonWeeks est maintenant calculé à partir de ces dates.
   seasonStartDate: Date | undefined;
   seasonEndDate: Date | undefined;
   practicesPerWeek: number;
   practiceDuration: number;
   numGames: number;
   gameDuration: number;
-  // REMPLACÉ : playoffWeeks est maintenant calculé à partir de ces dates.
   playoffStartDate: Date | undefined;
   playoffEndDate: Date | undefined;
   playoffFinalDays: number;
@@ -31,4 +29,7 @@ export interface BudgetResults {
   tournamentBonus: number;
   federationFee: number;
   grandTotal: number;
+  // NOUVEAU : Ajout des semaines actives pour affichage dans l'UI.
+  activeSeasonWeeks: number;
+  activePlayoffWeeks: number;
 }

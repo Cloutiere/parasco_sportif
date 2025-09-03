@@ -109,3 +109,15 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* 
+  Personnalisation du composant Calendrier (react-day-picker)
+  - Cible le bouton du jour actuel ("today") qui N'EST PAS sélectionné.
+  - Supprime la couleur de fond et le met en gras.
+  - Ajoute une bordure subtile de la couleur primaire du thème.
+*/
+.rdp-day_today:not(.rdp-day_selected) {
+  background-color: transparent;
+  font-weight: 500; /* semi-bold */
+  border: 1px solid hsl(var(--primary));
+}

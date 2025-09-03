@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 3.0 - Remplacement des inputs de durée par des sélecteurs de dates
+// [client/src/pages/home.tsx] - Version 7.0 - Ouverture contextuelle du calendrier au bon mois
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,15 +20,18 @@ import { Doughnut } from 'react-chartjs-2';
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator'; 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { DateRange } from 'react-day-picker';
+// NOUVEAU : Importation de useState
+import { useState } from 'react';
 
-// Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
 export default function Home() {
-  const { formData, results, handleInputChange, formatCurrency } = useBudgetCalculator();
+  const { formData, results, handleInputChange, handleDateRangeChange, formatCurrency } = useBudgetCalculator();
 
-  // Chart data configuration
+  // NOUVEAU : État local pour contrôler le mois d'ouverture du calendrier.
+  const [calendarDefaultView, setCalendarDefaultView] = useState<Date | undefined>();
+
+  // ... (Chart data and options remain the same)
   const chartData = {
     labels: [
       'Entraînements (Saison)',
@@ -117,7 +120,6 @@ export default function Home() {
               </CardHeader>
 
               <CardContent className="p-6 space-y-6">
-                {/* Team Information */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Informations de l'Équipe</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -172,8 +174,6 @@ export default function Home() {
                     </div>
                   </div>
                 </fieldset>
-
-                {/* Coaches */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Entraîneurs</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -204,35 +204,50 @@ export default function Home() {
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Saison Régulière</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2">
-                      <Label>Durée de la saison</Label>
+                    <div className="space-y-2 md:col-span-2">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Label>Début de la saison</Label>
+                        <Label>Fin de la saison</Label>
+                      </div>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className="w-full justify-start text-left font-normal"
-                            data-testid="date-range-season"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.seasonStartDate && formData.seasonEndDate ? (
-                              `${format(formData.seasonStartDate, 'd MMM yyyy', { locale: fr })} - ${format(formData.seasonEndDate, 'd MMM yyyy', { locale: fr })}`
-                            ) : (
-                              <span>Choisir une plage de dates</span>
-                            )}
-                          </Button>
+                          <div className="flex items-center w-full border border-input rounded-md text-sm font-normal cursor-pointer hover:bg-accent/50 transition-colors" data-testid="date-range-season-trigger">
+                            {/* MODIFIÉ : Ajout de onPointerDown pour la date de début */}
+                            <div 
+                              className="flex items-center p-2 w-1/2"
+                              onPointerDown={() => setCalendarDefaultView(formData.seasonStartDate)}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formData.seasonStartDate ? format(formData.seasonStartDate, "d MMM yyyy", { locale: fr }) : <span>Choisir</span>}
+                            </div>
+                            {/* MODIFIÉ : Ajout de onPointerDown pour la date de fin */}
+                            <div 
+                              className="flex items-center p-2 w-1/2 border-l border-input"
+                              onPointerDown={() => setCalendarDefaultView(formData.seasonEndDate || formData.seasonStartDate)}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formData.seasonEndDate ? format(formData.seasonEndDate, "d MMM yyyy", { locale: fr }) : <span>Choisir</span>}
+                            </div>
+                          </div>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
+                            initialFocus
                             mode="range"
+                            // MODIFIÉ : Utilisation de l'état local pour le mois par défaut
+                            defaultMonth={calendarDefaultView}
                             selected={{ from: formData.seasonStartDate, to: formData.seasonEndDate }}
-                            onSelect={(range: DateRange | undefined) => {
-                              handleInputChange('seasonStartDate', range?.from);
-                              handleInputChange('seasonEndDate', range?.to);
-                            }}
+                            onSelect={(range) => handleDateRangeChange(range, 'seasonStartDate', 'seasonEndDate')}
                             numberOfMonths={2}
                           />
                         </PopoverContent>
                       </Popover>
+                    </div>
+
+                    <div className="md:col-span-2 text-center bg-muted/50 p-2 rounded-md">
+                      <p className="text-sm text-muted-foreground">
+                        Durée calculée : <strong className="text-primary" data-testid="text-active-season-weeks">{results.activeSeasonWeeks} semaines actives</strong>
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="practicesPerWeek">Entraînements / semaine</Label>
@@ -265,7 +280,7 @@ export default function Home() {
                         data-testid="input-num-games"
                       />
                     </div>
-                    <div className="space-y-2 md:col-span-2">
+                    <div className="space-y-2">
                       <Label htmlFor="gameDuration">Durée match (heures)</Label>
                       <Input
                         id="gameDuration"
@@ -283,35 +298,50 @@ export default function Home() {
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Séries (Playoffs)</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2">
-                       <Label>Durée des séries</Label>
+                    <div className="space-y-2 md:col-span-2">
+                       <div className="grid grid-cols-2 gap-4">
+                        <Label>Début des séries</Label>
+                        <Label>Fin des séries</Label>
+                      </div>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className="w-full justify-start text-left font-normal"
-                            data-testid="date-range-playoffs"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.playoffStartDate && formData.playoffEndDate ? (
-                              `${format(formData.playoffStartDate, 'd MMM yyyy', { locale: fr })} - ${format(formData.playoffEndDate, 'd MMM yyyy', { locale: fr })}`
-                            ) : (
-                              <span>Choisir une plage de dates</span>
-                            )}
-                          </Button>
+                           <div className="flex items-center w-full border border-input rounded-md text-sm font-normal cursor-pointer hover:bg-accent/50 transition-colors" data-testid="date-range-playoffs-trigger">
+                            {/* MODIFIÉ : Ajout de onPointerDown pour la date de début */}
+                            <div 
+                              className="flex items-center p-2 w-1/2"
+                              onPointerDown={() => setCalendarDefaultView(formData.playoffStartDate)}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formData.playoffStartDate ? format(formData.playoffStartDate, "d MMM yyyy", { locale: fr }) : <span>Choisir</span>}
+                            </div>
+                            {/* MODIFIÉ : Ajout de onPointerDown pour la date de fin */}
+                            <div 
+                              className="flex items-center p-2 w-1/2 border-l border-input"
+                              onPointerDown={() => setCalendarDefaultView(formData.playoffEndDate || formData.playoffStartDate)}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formData.playoffEndDate ? format(formData.playoffEndDate, "d MMM yyyy", { locale: fr }) : <span>Choisir</span>}
+                            </div>
+                          </div>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
+                            initialFocus
                             mode="range"
+                            // MODIFIÉ : Utilisation de l'état local pour le mois par défaut
+                            defaultMonth={calendarDefaultView}
                             selected={{ from: formData.playoffStartDate, to: formData.playoffEndDate }}
-                            onSelect={(range: DateRange | undefined) => {
-                              handleInputChange('playoffStartDate', range?.from);
-                              handleInputChange('playoffEndDate', range?.to);
-                            }}
+                            onSelect={(range) => handleDateRangeChange(range, 'playoffStartDate', 'playoffEndDate')}
                             numberOfMonths={2}
                           />
                         </PopoverContent>
                       </Popover>
+                    </div>
+
+                    <div className="md:col-span-2 text-center bg-muted/50 p-2 rounded-md">
+                      <p className="text-sm text-muted-foreground">
+                        Durée calculée : <strong className="text-primary" data-testid="text-active-playoff-weeks">{results.activePlayoffWeeks} semaines actives</strong>
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="playoffFinalDays">Jours de finales</Label>
@@ -323,7 +353,7 @@ export default function Home() {
                         data-testid="input-playoff-final-days"
                       />
                     </div>
-                    <div className="space-y-2 md:col-span-2">
+                    <div className="space-y-2">
                       <Label htmlFor="playoffFinalsDuration">Durée jour de finale (heures)</Label>
                       <Input
                         id="playoffFinalsDuration"
@@ -336,7 +366,6 @@ export default function Home() {
                   </div>
                 </fieldset>
 
-                {/* Other Costs */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Autres Coûts</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -366,9 +395,7 @@ export default function Home() {
             </Card>
           </div>
 
-          {/* Results Section */}
           <div className="space-y-6">
-            {/* Budget Breakdown Table */}
             <Card>
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-xl font-semibold text-primary flex items-center space-x-2">
@@ -376,7 +403,6 @@ export default function Home() {
                   <span>Répartition des Coûts</span>
                 </CardTitle>
               </CardHeader>
-
               <CardContent className="p-6">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -441,7 +467,6 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Chart Visualization */}
             <Card>
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-xl font-semibold text-primary flex items-center space-x-2">
@@ -449,7 +474,6 @@ export default function Home() {
                   <span>Visualisation du Budget</span>
                 </CardTitle>
               </CardHeader>
-
               <CardContent className="p-6">
                 <div className="bg-muted/30 rounded-lg p-4 h-80">
                   <Doughnut data={chartData} options={chartOptions} data-testid="chart-budget" />
