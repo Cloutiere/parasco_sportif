@@ -1,4 +1,4 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 9.0 - Calcul des sous-totaux saison/séries et frais de transport
+// [client/src/hooks/useBudgetCalculator.ts] - Version 10.0 - Exposition de setFormData pour le chargement de modèles
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
 import { calculateActiveWeeks } from '../lib/date-utils';
@@ -122,5 +122,6 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     results,
     handleInputChange,
     formatCurrency,
+    setFormData,
   };
 }

@@ -1,6 +1,6 @@
-// [client/src/pages/home.tsx] - Version 24.0 - Implémentation de la sauvegarde de modèle via useMutation
+// [client/src/pages/home.tsx] - Version 25.0 - Implémentation du chargement de modèle via useQuery
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,20 +23,25 @@ import { fr } from 'date-fns/locale';
 
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
-import { createBudgetModel } from '../lib/api-client';
-import type { InsertBudgetModel } from '@shared/schema';
+import { createBudgetModel, getBudgetModels } from '../lib/api-client';
+import type { InsertBudgetModel, BudgetModel } from '@shared/schema';
 import { useToast } from '../hooks/use-toast';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
 export default function Home() {
-  const { formData, results, handleInputChange, formatCurrency } = useBudgetCalculator();
+  const { formData, results, handleInputChange, formatCurrency, setFormData } = useBudgetCalculator();
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [modelName, setModelName] = useState('');
   const [numberOfTeams, setNumberOfTeams] = useState(1);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const budgetModelsQuery = useQuery({
+    queryKey: ['budgetModels'],
+    queryFn: getBudgetModels,
+  });
 
   const createModelMutation = useMutation({
     mutationFn: (payload: InsertBudgetModel) => createBudgetModel(payload),
@@ -69,6 +74,34 @@ export default function Home() {
       playoffEndDate: formData.playoffEndDate ? formData.playoffEndDate.toISOString() : null,
     };
     createModelMutation.mutate(payload);
+  };
+
+  const handleLoadModel = (modelId: string) => {
+    const model = budgetModelsQuery.data?.find(m => m.id === modelId);
+    if (!model) return;
+
+    setModelName(model.name);
+    setNumberOfTeams(model.numberOfTeams);
+
+    // Convertir les chaînes de l'API en types attendus par le formulaire
+    setFormData({
+      ...model,
+      // Les champs numériques 'decimal' arrivent comme des strings, il faut les convertir
+      headCoachRate: Number(model.headCoachRate),
+      assistantCoachRate: Number(model.assistantCoachRate),
+      employerContributionRate: Number(model.employerContributionRate),
+      practiceDuration: Number(model.practiceDuration),
+      gameDuration: Number(model.gameDuration),
+      playoffFinalsDuration: Number(model.playoffFinalsDuration),
+      tournamentBonus: Number(model.tournamentBonus),
+      federationFee: Number(model.federationFee),
+      transportationFee: Number(model.transportationFee),
+      // Convertir les dates ISO string en objets Date
+      seasonStartDate: model.seasonStartDate ? new Date(model.seasonStartDate) : null,
+      seasonEndDate: model.seasonEndDate ? new Date(model.seasonEndDate) : null,
+      playoffStartDate: model.playoffStartDate ? new Date(model.playoffStartDate) : null,
+      playoffEndDate: model.playoffEndDate ? new Date(model.playoffEndDate) : null,
+    });
   };
 
   const rangeStyle = {
@@ -190,7 +223,31 @@ export default function Home() {
                   <span>Gestion du Modèle</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="load-model">Charger un modèle existant</Label>
+                  <Select
+                    onValueChange={handleLoadModel}
+                    disabled={budgetModelsQuery.isLoading}
+                    name="load-model"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un modèle..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {budgetModelsQuery.isLoading && <SelectItem value="loading" disabled>Chargement...</SelectItem>}
+                      {budgetModelsQuery.isError && <SelectItem value="error" disabled>Erreur de chargement</SelectItem>}
+                      {budgetModelsQuery.data && budgetModelsQuery.data.length === 0 && (
+                        <SelectItem value="none" disabled>Aucun modèle trouvé</SelectItem>
+                      )}
+                      {budgetModelsQuery.data?.map((model: BudgetModel) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="modelName">Nom du modèle</Label>
                   <Input
