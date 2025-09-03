@@ -1,4 +1,4 @@
-// [shared/schema.ts] - Version 3.0 - Correction du typage des dates pour la validation API
+// [shared/schema.ts] - Version 4.0 - Validation API robuste pour les types numériques
 import { sql } from "drizzle-orm";
 import {
   decimal,
@@ -66,12 +66,23 @@ export const budgetModels = pgTable("budget_models", {
 });
 
 // Schéma pour l'insertion/mise à jour
-// MODIFICATION : Utilisation de z.coerce.date() pour que Zod accepte les chaînes ISO du frontend
+// MODIFICATION : Utilisation de z.coerce pour les dates ET les nombres (décimaux)
 export const insertBudgetModelSchema = createInsertSchema(budgetModels, {
+  // Coercition pour les dates envoyées en chaîne ISO
   seasonStartDate: z.coerce.date().optional().nullable(),
   seasonEndDate: z.coerce.date().optional().nullable(),
   playoffStartDate: z.coerce.date().optional().nullable(),
   playoffEndDate: z.coerce.date().optional().nullable(),
+  // Coercition pour les champs `decimal` envoyés en tant que `number` par le frontend
+  headCoachRate: z.coerce.number(),
+  assistantCoachRate: z.coerce.number(),
+  employerContributionRate: z.coerce.number(),
+  practiceDuration: z.coerce.number(),
+  gameDuration: z.coerce.number(),
+  playoffFinalsDuration: z.coerce.number(),
+  tournamentBonus: z.coerce.number(),
+  federationFee: z.coerce.number(),
+  transportationFee: z.coerce.number(),
 }).omit({
   id: true,
   createdAt: true,
