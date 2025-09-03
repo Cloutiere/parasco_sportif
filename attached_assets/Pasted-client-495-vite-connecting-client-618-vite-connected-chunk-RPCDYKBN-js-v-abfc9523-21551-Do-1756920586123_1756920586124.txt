@@ -1,0 +1,64 @@
+client:495 [vite] connecting...
+client:618 [vite] connected.
+chunk-RPCDYKBN.js?v=abfc9523:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+home.tsx:250 Warning: Each child in a list should have a unique "key" prop.
+
+Check the render method of `Home`. See https://reactjs.org/link/warning-keys for more information.
+    at _c11 (https://4c2e4b32-df73-4ea8-872f-5c3798162b2e-00-1d9yfq0h4ihl1.kirk.replit.dev/src/components/ui/select.tsx:208:13)
+    at Home (https://4c2e4b32-df73-4ea8-872f-5c3798162b2e-00-1d9yfq0h4ihl1.kirk.replit.dev/src/pages/home.tsx:47:81)
+    at Route (https://4c2e4b32-df73-4ea8-872f-5c3798162b2e-00-1d9yfq0h4ihl1.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=abfc9523:323:16)
+    at Switch (https://4c2e4b32-df73-4ea8-872f-5c3798162b2e-00-1d9yfq0h4ihl1.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=abfc9523:379:17)
+    at Router
+    at Provider (https://4c2e4b32-df73-4ea8-872f-5c3798162b2e-00-1d9yfq0h4ihl1.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-534RMKU3.js?v=abfc9523:42:15)
+    at TooltipProvider (https://4c2e4b32-df73-4ea8-872f-5c3798162b2e-00-1d9yfq0h4ihl1.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=abfc9523:54:5)
+    at QueryClientProvider (https://4c2e4b32-df73-4ea8-872f-5c3798162b2e-00-1d9yfq0h4ihl1.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=abfc9523:2805:3)
+    at App
+printWarning @ react_jsx-dev-runtime.js?v=abfc9523:64
+error @ react_jsx-dev-runtime.js?v=abfc9523:48
+validateExplicitKey @ react_jsx-dev-runtime.js?v=abfc9523:724
+validateChildKeys @ react_jsx-dev-runtime.js?v=abfc9523:737
+jsxWithValidation @ react_jsx-dev-runtime.js?v=abfc9523:846
+Home @ home.tsx:250
+renderWithHooks @ chunk-RPCDYKBN.js?v=abfc9523:11548
+updateFunctionComponent @ chunk-RPCDYKBN.js?v=abfc9523:14582
+beginWork @ chunk-RPCDYKBN.js?v=abfc9523:15924
+beginWork$1 @ chunk-RPCDYKBN.js?v=abfc9523:19753
+performUnitOfWork @ chunk-RPCDYKBN.js?v=abfc9523:19198
+workLoopSync @ chunk-RPCDYKBN.js?v=abfc9523:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=abfc9523:19116
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=abfc9523:18874
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=abfc9523:9119
+(anonyme) @ chunk-RPCDYKBN.js?v=abfc9523:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=abfc9523:555
+flush @ @tanstack_react-query.js?v=abfc9523:569
+batch @ @tanstack_react-query.js?v=abfc9523:587
+dispatch_fn @ @tanstack_react-query.js?v=abfc9523:996
+setData @ @tanstack_react-query.js?v=abfc9523:696
+onSuccess @ @tanstack_react-query.js?v=abfc9523:897
+resolve @ @tanstack_react-query.js?v=abfc9523:456
+Promise.then
+run @ @tanstack_react-query.js?v=abfc9523:498
+start @ @tanstack_react-query.js?v=abfc9523:536
+fetch @ @tanstack_react-query.js?v=abfc9523:926
+executeFetch_fn @ @tanstack_react-query.js?v=abfc9523:2211
+onSubscribe @ @tanstack_react-query.js?v=abfc9523:1898
+subscribe @ @tanstack_react-query.js?v=abfc9523:24
+(anonyme) @ @tanstack_react-query.js?v=abfc9523:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=abfc9523:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=abfc9523:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=abfc9523:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=abfc9523:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=abfc9523:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=abfc9523:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=abfc9523:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=abfc9523:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=abfc9523:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=abfc9523:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=abfc9523:19432
+commitRoot @ chunk-RPCDYKBN.js?v=abfc9523:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=abfc9523:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=abfc9523:18718
+workLoop @ chunk-RPCDYKBN.js?v=abfc9523:197
+flushWork @ chunk-RPCDYKBN.js?v=abfc9523:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=abfc9523:384

@@ -248,10 +248,10 @@ export default function Home() {
                       <SelectValue placeholder="Sélectionner un modèle..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {budgetModelsQuery.isLoading && <SelectItem value="loading" disabled>Chargement...</SelectItem>}
-                      {budgetModelsQuery.isError && <SelectItem value="error" disabled>Erreur de chargement</SelectItem>}
+                      {budgetModelsQuery.isLoading && <SelectItem key="loading" value="loading" disabled>Chargement...</SelectItem>}
+                      {budgetModelsQuery.isError && <SelectItem key="error" value="error" disabled>Erreur de chargement</SelectItem>}
                       {budgetModelsQuery.data && budgetModelsQuery.data.length === 0 && (
-                        <SelectItem value="none" disabled>Aucun modèle trouvé</SelectItem>
+                        <SelectItem key="none" value="none" disabled>Aucun modèle trouvé</SelectItem>
                       )}
                       {budgetModelsQuery.data?.map((model: BudgetModel) => (
                         <SelectItem key={model.id} value={model.id}>
