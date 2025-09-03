@@ -1,4 +1,5 @@
-// [server/storage.ts] - Version 5.0 - Implémentation MemStorage simple et fonctionnelle
+// [server/storage.ts] - Version 6.0 - Implémentation ReplitDbStorage persistante
+import Database from "@replit/database";
 import {
   type BudgetModel,
   type InsertBudgetModel,
@@ -44,20 +45,48 @@ export interface IStorage {
 }
 
 /**
- * Implémentation du stockage en mémoire simple et fonctionnelle.
+ * Implémentation du stockage utilisant la base de données clé-valeur persistante de Replit.
  */
-export class MemStorage implements IStorage {
-  private users = new Map<string, User>();
-  private budgetModels = new Map<string, BudgetModel>();
+export class ReplitDbStorage implements IStorage {
+  private db: Database;
+  private BUDGET_MODEL_PREFIX = "budget_model_";
+  private USER_PREFIX = "user_";
+
+  constructor() {
+    this.db = new Database();
+  }
+
+  /**
+   * Hydrate un modèle de budget brut depuis la BDD en convertissant les chaînes de dates
+   * en objets Date.
+   */
+  private _hydrateModel(rawModel: any): BudgetModel {
+    return {
+      ...rawModel,
+      createdAt: new Date(rawModel.createdAt),
+      updatedAt: rawModel.updatedAt ? new Date(rawModel.updatedAt) : null,
+      seasonStartDate: rawModel.seasonStartDate ? new Date(rawModel.seasonStartDate) : null,
+      seasonEndDate: rawModel.seasonEndDate ? new Date(rawModel.seasonEndDate) : null,
+      playoffStartDate: rawModel.playoffStartDate ? new Date(rawModel.playoffStartDate) : null,
+      playoffEndDate: rawModel.playoffEndDate ? new Date(rawModel.playoffEndDate) : null,
+    };
+  }
 
   // --- User methods (STUB) ---
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const key = `${this.USER_PREFIX}${id}`;
+    const result: any = await this.db.get(key);
+    return result?.value || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    for (const user of Array.from(this.users.values())) {
-      if (user.username === username) {
+    const keysResult: any = await this.db.list(this.USER_PREFIX);
+    if (!keysResult?.ok || !Array.isArray(keysResult.value)) return undefined;
+    
+    for (const key of keysResult.value) {
+      const userResult: any = await this.db.get(key);
+      const user = userResult?.value as User;
+      if (user && user.username === username) {
         return user;
       }
     }
@@ -70,13 +99,16 @@ export class MemStorage implements IStorage {
       id,
       ...insertUser,
     };
-    this.users.set(id, user);
+    const key = `${this.USER_PREFIX}${id}`;
+    await this.db.set(key, user);
     return user;
   }
 
   // --- BudgetModel methods ---
   async createBudgetModel(modelData: InsertBudgetModel): Promise<BudgetModel> {
     const id = randomUUID();
+    const key = `${this.BUDGET_MODEL_PREFIX}${id}`;
+    console.log("DEBUG: Creating model with key:", key);
 
     const newModel: BudgetModel = {
       ...modelData,
@@ -104,23 +136,39 @@ export class MemStorage implements IStorage {
       playoffEndDate: modelData.playoffEndDate ?? null,
     };
 
-    this.budgetModels.set(id, newModel);
+    await this.db.set(key, newModel);
     return newModel;
   }
 
   async getBudgetModels(): Promise<BudgetModel[]> {
-    return Array.from(this.budgetModels.values());
+    const keysResult: any = await this.db.list(this.BUDGET_MODEL_PREFIX);
+    if (!keysResult?.ok || !Array.isArray(keysResult.value) || keysResult.value.length === 0) {
+      return [];
+    }
+    const promises = keysResult.value.map((key: string) => this.db.get(key));
+    const rawResults = await Promise.all(promises);
+    // Extraire les valeurs des objets Result et filtrer les entrées null
+    const rawModels = rawResults
+      .filter((result: any) => result?.ok && result?.value)
+      .map((result: any) => result.value);
+    // Hydrater les modèles
+    return rawModels.map((model: any) => this._hydrateModel(model));
   }
 
   async getBudgetModelById(id: string): Promise<BudgetModel | undefined> {
-    return this.budgetModels.get(id);
+    const key = `${this.BUDGET_MODEL_PREFIX}${id}`;
+    const result: any = await this.db.get(key);
+    if (!result?.ok || !result?.value) {
+      return undefined;
+    }
+    return this._hydrateModel(result.value);
   }
 
   async updateBudgetModel(
     id: string,
     modelData: Partial<InsertBudgetModel>,
   ): Promise<BudgetModel | undefined> {
-    const existingModel = this.budgetModels.get(id);
+    const existingModel = await this.getBudgetModelById(id);
     if (!existingModel) {
       return undefined;
     }
@@ -141,16 +189,18 @@ export class MemStorage implements IStorage {
       updatedAt: new Date(),
     };
 
-    this.budgetModels.set(id, updatedModel);
+    const key = `${this.BUDGET_MODEL_PREFIX}${id}`;
+    await this.db.set(key, updatedModel);
     return updatedModel;
   }
 
   async deleteBudgetModel(id: string): Promise<{ success: boolean }> {
-    const exists = this.budgetModels.has(id);
-    if (!exists) {
+    const model = await this.getBudgetModelById(id);
+    if (!model) {
       return { success: false };
     }
-    this.budgetModels.delete(id);
+    const key = `${this.BUDGET_MODEL_PREFIX}${id}`;
+    await this.db.delete(key);
     return { success: true };
   }
 
@@ -204,5 +254,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Export simple storage implementation
-export const storage = new MemStorage();
+// Export persistent storage implementation
+export const storage = new ReplitDbStorage();
