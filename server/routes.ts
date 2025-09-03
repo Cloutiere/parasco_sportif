@@ -93,6 +93,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DELETE /api/budget-models: Supprime tous les modèles de budget
+  app.delete("/api/budget-models", async (req, res) => {
+    try {
+      const result = await storage.clearAllBudgetModels();
+      console.log(`Deleted ${result.deletedCount} budget models`);
+      res.status(200).json({ 
+        success: true, 
+        deletedCount: result.deletedCount,
+        message: `${result.deletedCount} modèles supprimés avec succès`
+      });
+    } catch (error) {
+      console.error('Error clearing all budget models:', error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Settings, BarChart3, Calculator, CalendarIcon, Archive, FileText } from 'lucide-react'; // Import de FileText
+import { Settings, BarChart3, Calculator, CalendarIcon, Archive, FileText, Trash2 } from 'lucide-react'; // Import de FileText et Trash2
 import {
   Chart as ChartJS,
   ArcElement,
@@ -24,7 +24,7 @@ import { fr } from 'date-fns/locale';
 
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
-import { createBudgetModel, getBudgetModels } from '../lib/api-client';
+import { createBudgetModel, getBudgetModels, clearAllBudgetModels } from '../lib/api-client';
 import type { InsertBudgetModel, BudgetModel } from '@shared/schema';
 import { useToast } from '../hooks/use-toast';
 
@@ -75,6 +75,30 @@ export default function Home() {
       });
     },
   });
+
+  const clearDataMutation = useMutation({
+    mutationFn: clearAllBudgetModels,
+    onSuccess: (result) => {
+      toast({
+        title: 'Succès',
+        description: result.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
+    },
+    onError: () => {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Erreur lors de la suppression des données.',
+      });
+    },
+  });
+
+  const handleClearAllData = () => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer TOUTES les données ? Cette action est irréversible.')) {
+      clearDataMutation.mutate();
+    }
+  };
 
   const handleSaveModel = () => {
     // Format dates to ISO strings for backend compatibility
@@ -277,7 +301,7 @@ export default function Home() {
                     onChange={(e) => setNumberOfTeams(Number(e.target.value))}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Button
                     onClick={handleSaveModel}
                     disabled={createModelMutation.isPending || !generatedModelName}
@@ -285,12 +309,23 @@ export default function Home() {
                   >
                     {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
                   </Button>
-                  <Button asChild variant="outline">
-                    <Link href="/report">
-                      <FileText className="mr-2 h-4 w-4" />
-                      Voir le Rapport
-                    </Link>
-                  </Button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button asChild variant="outline">
+                      <Link href="/report">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Voir le Rapport
+                      </Link>
+                    </Button>
+                    <Button 
+                      onClick={handleClearAllData} 
+                      variant="destructive"
+                      disabled={clearDataMutation.isPending}
+                      data-testid="button-clear-data"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {clearDataMutation.isPending ? 'Suppression...' : 'Vider les données'}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

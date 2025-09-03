@@ -39,6 +39,7 @@ export interface IStorage {
     modelData: Partial<InsertBudgetModel>,
   ): Promise<BudgetModel | undefined>;
   deleteBudgetModel(id: string): Promise<{ success: boolean }>;
+  clearAllBudgetModels(): Promise<{ success: boolean; deletedCount: number }>;
 
   // Reporting methods
   getBudgetSummaryByDiscipline(): Promise<{ discipline: string; totalCost: number }[]>;
@@ -202,6 +203,21 @@ export class ReplitDbStorage implements IStorage {
     const key = `${this.BUDGET_MODEL_PREFIX}${id}`;
     await this.db.delete(key);
     return { success: true };
+  }
+
+  async clearAllBudgetModels(): Promise<{ success: boolean; deletedCount: number }> {
+    const keysResult: any = await this.db.list(this.BUDGET_MODEL_PREFIX);
+    if (!keysResult?.ok || !Array.isArray(keysResult.value) || keysResult.value.length === 0) {
+      return { success: true, deletedCount: 0 };
+    }
+    
+    console.log("DEBUG: Clearing all budget models, keys found:", keysResult.value);
+    
+    // Supprimer chaque clé une par une
+    const deletePromises = keysResult.value.map((key: string) => this.db.delete(key));
+    await Promise.all(deletePromises);
+    
+    return { success: true, deletedCount: keysResult.value.length };
   }
 
   // --- Reporting methods ---

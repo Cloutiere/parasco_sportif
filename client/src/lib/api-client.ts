@@ -29,3 +29,12 @@ export async function getDisciplineReport(): Promise<{ discipline: string; total
   const res = await apiRequest('GET', '/api/reports/by-discipline');
   return await res.json();
 }
+
+/**
+ * Supprime tous les modèles de budget.
+ * @returns Une promesse résolue avec le résultat de l'opération.
+ */
+export async function clearAllBudgetModels(): Promise<{ success: boolean; deletedCount: number; message: string }> {
+  const res = await apiRequest('DELETE', '/api/budget-models');
+  return await res.json();
+}
