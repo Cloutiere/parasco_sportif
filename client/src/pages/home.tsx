@@ -35,6 +35,7 @@ export default function Home() {
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [generatedModelName, setGeneratedModelName] = useState('');
   const [numberOfTeams, setNumberOfTeams] = useState(1);
+  const [loadedModelId, setLoadedModelId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -76,27 +77,38 @@ export default function Home() {
     },
   });
 
-  const clearDataMutation = useMutation({
-    mutationFn: clearAllBudgetModels,
-    onSuccess: (result) => {
+  const deleteModelMutation = useMutation({
+    mutationFn: async (modelId: string) => {
+      const response = await fetch(`/api/budget-models/${modelId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete model');
+      }
+      return response.ok;
+    },
+    onSuccess: () => {
       toast({
         title: 'Succès',
-        description: result.message,
+        description: 'Modèle supprimé avec succès',
       });
+      setLoadedModelId(null);
       queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
     },
     onError: () => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Erreur lors de la suppression des données.',
+        description: 'Erreur lors de la suppression du modèle.',
       });
     },
   });
 
-  const handleClearAllData = () => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer TOUTES les données ? Cette action est irréversible.')) {
-      clearDataMutation.mutate();
+  const handleDeleteLoadedModel = () => {
+    if (!loadedModelId) return;
+    
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce modèle ? Cette action est irréversible.')) {
+      deleteModelMutation.mutate(loadedModelId);
     }
   };
 
@@ -115,10 +127,13 @@ export default function Home() {
   };
 
   const handleLoadModel = (modelId: string) => {
+    if (modelId === 'loading' || modelId === 'error' || modelId === 'none') return;
+    
     const model = budgetModelsQuery.data?.find(m => m.id === modelId);
     if (!model) return;
 
     setNumberOfTeams(model.numberOfTeams);
+    setLoadedModelId(modelId);
 
     // Convertir les chaînes de l'API en types attendus par le formulaire
     setFormData({
@@ -317,13 +332,13 @@ export default function Home() {
                       </Link>
                     </Button>
                     <Button 
-                      onClick={handleClearAllData} 
+                      onClick={handleDeleteLoadedModel} 
                       variant="destructive"
-                      disabled={clearDataMutation.isPending}
-                      data-testid="button-clear-data"
+                      disabled={deleteModelMutation.isPending || !loadedModelId}
+                      data-testid="button-delete-model"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
-                      {clearDataMutation.isPending ? 'Suppression...' : 'Vider les données'}
+                      {deleteModelMutation.isPending ? 'Suppression...' : 'Supprimer ce modèle'}
                     </Button>
                   </div>
                 </div>
