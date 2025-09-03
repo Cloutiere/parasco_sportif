@@ -1,4 +1,4 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 5.0 - Simplification de la gestion des dates
+// [client/src/hooks/useBudgetCalculator.ts] - Version 6.0 - Intégration du calcul des frais administratifs
 
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
@@ -26,6 +26,8 @@ const defaultInitialState: BudgetFormData = {
   playoffFinalsDuration: 8,
   tournamentBonus: 500,
   federationFee: 1148,
+  // NOUVEAU : Ajout de la valeur par défaut pour les frais administratifs.
+  administrativeFeePercentage: 15,
 };
 
 /**
@@ -48,6 +50,8 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     grandTotal: 0,
     activeSeasonWeeks: 0,
     activePlayoffWeeks: 0,
+    // NOUVEAU : Initialisation du montant des frais administratifs.
+    administrativeFeeAmount: 0,
   });
 
   const calculateBudget = useCallback(() => {
@@ -69,7 +73,12 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     const costPlayoffFinals = totalPlayoffFinalHours * totalCoachRatePerHour;
 
     const totalCoachingSalaries = costSeasonPractices + costSeasonGames + costPlayoffPractices + costPlayoffFinals;
-    const grandTotal = totalCoachingSalaries + formData.tournamentBonus + formData.federationFee;
+
+    // NOUVEAU : Calcul du montant des frais administratifs basé sur le pourcentage.
+    const administrativeFeeAmount = (totalCoachingSalaries * formData.administrativeFeePercentage) / 100;
+
+    // MODIFIÉ : Le grand total inclut maintenant les frais administratifs.
+    const grandTotal = totalCoachingSalaries + administrativeFeeAmount + formData.tournamentBonus + formData.federationFee;
 
     setResults({
       costSeasonPractices,
@@ -82,6 +91,8 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
       grandTotal,
       activeSeasonWeeks,
       activePlayoffWeeks,
+      // NOUVEAU : Mise à jour de l'état des résultats avec le montant calculé.
+      administrativeFeeAmount,
     });
   }, [formData]);
 

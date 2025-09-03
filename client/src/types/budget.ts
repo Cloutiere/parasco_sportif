@@ -1,4 +1,4 @@
-// [client/src/types/budget.ts] - Version 3.0 - Exposition des semaines actives
+// [client/src/types/budget.ts] - Version 4.0 - Ajout des frais administratifs
 
 export interface BudgetFormData {
   discipline: string;
@@ -18,6 +18,8 @@ export interface BudgetFormData {
   playoffFinalsDuration: number;
   tournamentBonus: number;
   federationFee: number;
+  // NOUVEAU : Pourcentage des frais administratifs.
+  administrativeFeePercentage: number;
 }
 
 export interface BudgetResults {
@@ -29,7 +31,8 @@ export interface BudgetResults {
   tournamentBonus: number;
   federationFee: number;
   grandTotal: number;
-  // NOUVEAU : Ajout des semaines actives pour affichage dans l'UI.
   activeSeasonWeeks: number;
   activePlayoffWeeks: number;
+  // NOUVEAU : Montant calculé des frais administratifs.
+  administrativeFeeAmount: number;
 }
