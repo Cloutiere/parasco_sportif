@@ -1,7 +1,7 @@
-// [client/src/pages/home.tsx] - Version 28.0 - Ajouet des champs pour l'école
+// [client/src/pages/home.tsx] - Version 29.0 - Ajout de la fonctionnalité d'export Excel
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'wouter'; // Import du composant Link
+import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,22 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Settings, BarChart3, Calculator, CalendarIcon, Archive, FileText, Trash2 } from 'lucide-react'; // Import de FileText et Trash2
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-} from 'chart.js';
+import { Settings, BarChart3, Calculator, CalendarIcon, Archive, FileText, Trash2, FileDown } from 'lucide-react'; // Import de FileDown
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { format, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
-import { createBudgetModel, getBudgetModels, clearAllBudgetModels } from '../lib/api-client';
+import { createBudgetModel, getBudgetModels } from '../lib/api-client';
+import { exportToExcel } from '../lib/excel-export'; // NOUVEL IMPORT
 import type { InsertBudgetModel, BudgetModel } from '@shared/schema';
 import { useToast } from '../hooks/use-toast';
 
@@ -106,7 +100,7 @@ export default function Home() {
 
   const handleDeleteLoadedModel = () => {
     if (!loadedModelId) return;
-    
+
     if (confirm('Êtes-vous sûr de vouloir supprimer ce modèle ? Cette action est irréversible.')) {
       deleteModelMutation.mutate(loadedModelId);
     }
@@ -126,9 +120,14 @@ export default function Home() {
     createModelMutation.mutate(payload);
   };
 
+  // NOUVELLE FONCTION
+  const handleExportClick = () => {
+    exportToExcel(formData, results, generatedModelName);
+  };
+
   const handleLoadModel = (modelId: string) => {
     if (modelId === 'loading' || modelId === 'error' || modelId === 'none') return;
-    
+
     const model = budgetModelsQuery.data?.find(m => m.id === modelId);
     if (!model) return;
 
@@ -180,8 +179,7 @@ export default function Home() {
   };
 
   const holidayModifier = {
-    holiday: (date: Date) =>
-      HOLIDAY_WEEKS_STARTS.has(startOfWeek(date, { weekStartsOn: 0 }).getTime()),
+    holiday: (date: Date) => HOLIDAY_WEEKS_STARTS.has(startOfWeek(date, { weekStartsOn: 0 }).getTime()),
   };
 
   const chartData = {
@@ -278,19 +276,25 @@ export default function Home() {
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="load-model">Charger un modèle existant</Label>
-                  <Select
-                    onValueChange={handleLoadModel}
-                    disabled={budgetModelsQuery.isLoading}
-                    name="load-model"
-                  >
+                  <Select onValueChange={handleLoadModel} disabled={budgetModelsQuery.isLoading} name="load-model">
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un modèle..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {budgetModelsQuery.isLoading && <SelectItem key="loading" value="loading" disabled>Chargement...</SelectItem>}
-                      {budgetModelsQuery.isError && <SelectItem key="error" value="error" disabled>Erreur de chargement</SelectItem>}
+                      {budgetModelsQuery.isLoading && (
+                        <SelectItem key="loading" value="loading" disabled>
+                          Chargement...
+                        </SelectItem>
+                      )}
+                      {budgetModelsQuery.isError && (
+                        <SelectItem key="error" value="error" disabled>
+                          Erreur de chargement
+                        </SelectItem>
+                      )}
                       {budgetModelsQuery.data && budgetModelsQuery.data.length === 0 && (
-                        <SelectItem key="none" value="none" disabled>Aucun modèle trouvé</SelectItem>
+                        <SelectItem key="none" value="none" disabled>
+                          Aucun modèle trouvé
+                        </SelectItem>
                       )}
                       {budgetModelsQuery.data?.map((model: BudgetModel) => (
                         <SelectItem key={model.id} value={model.id}>
@@ -313,17 +317,24 @@ export default function Home() {
                     type="number"
                     min="1"
                     value={numberOfTeams}
-                    onChange={(e) => setNumberOfTeams(Number(e.target.value))}
+                    onChange={e => setNumberOfTeams(Number(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Button
-                    onClick={handleSaveModel}
-                    disabled={createModelMutation.isPending || !generatedModelName}
-                    className="w-full"
-                  >
-                    {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
-                  </Button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      onClick={handleSaveModel}
+                      disabled={createModelMutation.isPending || !generatedModelName}
+                      className="w-full"
+                    >
+                      {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
+                    </Button>
+                    {/* NOUVEAU BOUTON D'EXPORT */}
+                    <Button onClick={handleExportClick} variant="outline">
+                      <FileDown className="mr-2 h-4 w-4" />
+                      Exporter en Excel
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <Button asChild variant="outline">
                       <Link href="/report">
@@ -331,8 +342,8 @@ export default function Home() {
                         Voir le Rapport
                       </Link>
                     </Button>
-                    <Button 
-                      onClick={handleDeleteLoadedModel} 
+                    <Button
+                      onClick={handleDeleteLoadedModel}
                       variant="destructive"
                       disabled={deleteModelMutation.isPending || !loadedModelId}
                       data-testid="button-delete-model"
@@ -356,14 +367,16 @@ export default function Home() {
               <CardContent className="p-6 space-y-6">
                 {/* ... fieldsets ... */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
-                  <legend className="text-sm font-medium text-primary px-3 bg-background">Informations de l'Équipe</legend>
+                  <legend className="text-sm font-medium text-primary px-3 bg-background">
+                    Informations de l'Équipe
+                  </legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="seasonYear">Année scolaire</Label>
                       <Input
                         id="seasonYear"
                         value={formData.seasonYear}
-                        onChange={(e) => handleInputChange('seasonYear', e.target.value)}
+                        onChange={e => handleInputChange('seasonYear', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -371,7 +384,7 @@ export default function Home() {
                       <Input
                         id="schoolName"
                         value={formData.schoolName}
-                        onChange={(e) => handleInputChange('schoolName', e.target.value)}
+                        onChange={e => handleInputChange('schoolName', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -379,70 +392,82 @@ export default function Home() {
                       <Input
                         id="schoolCode"
                         value={formData.schoolCode}
-                        onChange={(e) => handleInputChange('schoolCode', e.target.value)}
+                        onChange={e => handleInputChange('schoolCode', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="discipline">Discipline</Label>
-                      <Select
-                        value={formData.discipline}
-                        onValueChange={(value) => handleInputChange('discipline', value)}
-                      >
+                      <Select value={formData.discipline} onValueChange={value => handleInputChange('discipline', value)}>
                         <SelectTrigger data-testid="select-discipline">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem key="Handball" value="Handball">Handball</SelectItem>
-                          <SelectItem key="Basketball" value="Basketball">Basketball</SelectItem>
-                          <SelectItem key="Volleyball" value="Volleyball">Volleyball</SelectItem>
+                          <SelectItem key="Handball" value="Handball">
+                            Handball
+                          </SelectItem>
+                          <SelectItem key="Basketball" value="Basketball">
+                            Basketball
+                          </SelectItem>
+                          <SelectItem key="Volleyball" value="Volleyball">
+                            Volleyball
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="gender">Sexe</Label>
-                      <Select
-                        value={formData.gender}
-                        onValueChange={(value) => handleInputChange('gender', value)}
-                      >
+                      <Select value={formData.gender} onValueChange={value => handleInputChange('gender', value)}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem key="Féminin" value="Féminin">Féminin</SelectItem>
-                          <SelectItem key="Masculin" value="Masculin">Masculin</SelectItem>
+                          <SelectItem key="Féminin" value="Féminin">
+                            Féminin
+                          </SelectItem>
+                          <SelectItem key="Masculin" value="Masculin">
+                            Masculin
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category">Catégorie</Label>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value) => handleInputChange('category', value)}
-                      >
+                      <Select value={formData.category} onValueChange={value => handleInputChange('category', value)}>
                         <SelectTrigger data-testid="select-category">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem key="D2" value="D2">D2</SelectItem>
-                          <SelectItem key="D3" value="D3">D3</SelectItem>
-                          <SelectItem key="D4" value="D4">D4</SelectItem>
+                          <SelectItem key="D2" value="D2">
+                            D2
+                          </SelectItem>
+                          <SelectItem key="D3" value="D3">
+                            D3
+                          </SelectItem>
+                          <SelectItem key="D4" value="D4">
+                            D4
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="level">Niveau</Label>
-                      <Select
-                        value={formData.level}
-                        onValueChange={(value) => handleInputChange('level', value)}
-                      >
+                      <Select value={formData.level} onValueChange={value => handleInputChange('level', value)}>
                         <SelectTrigger data-testid="select-level">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem key="Benjamin" value="Benjamin">Benjamin</SelectItem>
-                          <SelectItem key="Cadet" value="Cadet">Cadet</SelectItem>
-                          <SelectItem key="Juvenile" value="Juvenile">Juvénile</SelectItem>
-                          <SelectItem key="Tous" value="Tous">Tous</SelectItem>
+                          <SelectItem key="Benjamin" value="Benjamin">
+                            Benjamin
+                          </SelectItem>
+                          <SelectItem key="Cadet" value="Cadet">
+                            Cadet
+                          </SelectItem>
+                          <SelectItem key="Juvenile" value="Juvenile">
+                            Juvénile
+                          </SelectItem>
+                          <SelectItem key="Tous" value="Tous">
+                            Tous
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -457,7 +482,7 @@ export default function Home() {
                         id="headCoachRate"
                         type="number"
                         value={formData.headCoachRate}
-                        onChange={(e) => handleInputChange('headCoachRate', e.target.value)}
+                        onChange={e => handleInputChange('headCoachRate', e.target.value)}
                         data-testid="input-head-coach-rate"
                       />
                     </div>
@@ -467,7 +492,7 @@ export default function Home() {
                         id="assistantCoachRate"
                         type="number"
                         value={formData.assistantCoachRate}
-                        onChange={(e) => handleInputChange('assistantCoachRate', e.target.value)}
+                        onChange={e => handleInputChange('assistantCoachRate', e.target.value)}
                         data-testid="input-assistant-coach-rate"
                       />
                     </div>
@@ -478,7 +503,7 @@ export default function Home() {
                         type="number"
                         step="0.1"
                         value={formData.employerContributionRate}
-                        onChange={(e) => handleInputChange('employerContributionRate', e.target.value)}
+                        onChange={e => handleInputChange('employerContributionRate', e.target.value)}
                         data-testid="input-employer-contribution-rate"
                       />
                     </div>
@@ -493,7 +518,7 @@ export default function Home() {
                       <Label>Début de la saison</Label>
                       <Popover
                         open={openPopover === 'seasonStartDate'}
-                        onOpenChange={(isOpen) => setOpenPopover(isOpen ? 'seasonStartDate' : null)}
+                        onOpenChange={isOpen => setOpenPopover(isOpen ? 'seasonStartDate' : null)}
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -514,11 +539,14 @@ export default function Home() {
                             mode="single"
                             month={formData.seasonStartDate ? subMonths(formData.seasonStartDate, 1) : undefined}
                             selected={formData.seasonStartDate}
-                            onSelect={(date) => {
-                              handleInputChange('seasonStartDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined);
+                            onSelect={date => {
+                              handleInputChange(
+                                'seasonStartDate',
+                                date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined
+                              );
                               setOpenPopover(null);
                             }}
-                            disabled={(date) => (formData.seasonEndDate ? date > formData.seasonEndDate : false)}
+                            disabled={date => (formData.seasonEndDate ? date > formData.seasonEndDate : false)}
                             initialFocus
                             numberOfMonths={3}
                             modifiers={{ ...seasonModifiers, ...holidayModifier }}
@@ -533,7 +561,7 @@ export default function Home() {
                       <Label>Fin de la saison</Label>
                       <Popover
                         open={openPopover === 'seasonEndDate'}
-                        onOpenChange={(isOpen) => setOpenPopover(isOpen ? 'seasonEndDate' : null)}
+                        onOpenChange={isOpen => setOpenPopover(isOpen ? 'seasonEndDate' : null)}
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -554,11 +582,11 @@ export default function Home() {
                             mode="single"
                             month={formData.seasonEndDate ? subMonths(formData.seasonEndDate, 1) : undefined}
                             selected={formData.seasonEndDate}
-                            onSelect={(date) => {
+                            onSelect={date => {
                               handleInputChange('seasonEndDate', date ? endOfWeek(date, { weekStartsOn: 0 }) : undefined);
                               setOpenPopover(null);
                             }}
-                            disabled={(date) => (formData.seasonStartDate ? date < formData.seasonStartDate : false)}
+                            disabled={date => (formData.seasonStartDate ? date < formData.seasonStartDate : false)}
                             initialFocus
                             numberOfMonths={3}
                             modifiers={{ ...seasonModifiers, ...holidayModifier }}
@@ -583,7 +611,7 @@ export default function Home() {
                         id="practicesPerWeek"
                         type="number"
                         value={formData.practicesPerWeek}
-                        onChange={(e) => handleInputChange('practicesPerWeek', e.target.value)}
+                        onChange={e => handleInputChange('practicesPerWeek', e.target.value)}
                         data-testid="input-practices-per-week"
                       />
                     </div>
@@ -594,7 +622,7 @@ export default function Home() {
                         type="number"
                         step="0.5"
                         value={formData.practiceDuration}
-                        onChange={(e) => handleInputChange('practiceDuration', e.target.value)}
+                        onChange={e => handleInputChange('practiceDuration', e.target.value)}
                         data-testid="input-practice-duration"
                       />
                     </div>
@@ -604,7 +632,7 @@ export default function Home() {
                         id="numGames"
                         type="number"
                         value={formData.numGames}
-                        onChange={(e) => handleInputChange('numGames', e.target.value)}
+                        onChange={e => handleInputChange('numGames', e.target.value)}
                         data-testid="input-num-games"
                       />
                     </div>
@@ -615,7 +643,7 @@ export default function Home() {
                         type="number"
                         step="0.5"
                         value={formData.gameDuration}
-                        onChange={(e) => handleInputChange('gameDuration', e.target.value)}
+                        onChange={e => handleInputChange('gameDuration', e.target.value)}
                         data-testid="input-game-duration"
                       />
                     </div>
@@ -630,7 +658,7 @@ export default function Home() {
                       <Label>Début des séries</Label>
                       <Popover
                         open={openPopover === 'playoffStartDate'}
-                        onOpenChange={(isOpen) => setOpenPopover(isOpen ? 'playoffStartDate' : null)}
+                        onOpenChange={isOpen => setOpenPopover(isOpen ? 'playoffStartDate' : null)}
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -651,11 +679,14 @@ export default function Home() {
                             mode="single"
                             month={formData.playoffStartDate ? subMonths(formData.playoffStartDate, 1) : undefined}
                             selected={formData.playoffStartDate}
-                            onSelect={(date) => {
-                              handleInputChange('playoffStartDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined);
+                            onSelect={date => {
+                              handleInputChange(
+                                'playoffStartDate',
+                                date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined
+                              );
                               setOpenPopover(null);
                             }}
-                            disabled={(date) => (formData.playoffEndDate ? date > formData.playoffEndDate : false)}
+                            disabled={date => (formData.playoffEndDate ? date > formData.playoffEndDate : false)}
                             initialFocus
                             numberOfMonths={3}
                             modifiers={{ ...playoffModifiers, ...holidayModifier }}
@@ -670,7 +701,7 @@ export default function Home() {
                       <Label>Fin des séries</Label>
                       <Popover
                         open={openPopover === 'playoffEndDate'}
-                        onOpenChange={(isOpen) => setOpenPopover(isOpen ? 'playoffEndDate' : null)}
+                        onOpenChange={isOpen => setOpenPopover(isOpen ? 'playoffEndDate' : null)}
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -691,11 +722,14 @@ export default function Home() {
                             mode="single"
                             month={formData.playoffEndDate ? subMonths(formData.playoffEndDate, 1) : undefined}
                             selected={formData.playoffEndDate}
-                            onSelect={(date) => {
-                              handleInputChange('playoffEndDate', date ? endOfWeek(date, { weekStartsOn: 0 }) : undefined);
+                            onSelect={date => {
+                              handleInputChange(
+                                'playoffEndDate',
+                                date ? endOfWeek(date, { weekStartsOn: 0 }) : undefined
+                              );
                               setOpenPopover(null);
                             }}
-                            disabled={(date) => (formData.playoffStartDate ? date < formData.playoffStartDate : false)}
+                            disabled={date => (formData.playoffStartDate ? date < formData.playoffStartDate : false)}
                             initialFocus
                             numberOfMonths={3}
                             modifiers={{ ...playoffModifiers, ...holidayModifier }}
@@ -720,7 +754,7 @@ export default function Home() {
                         id="playoffFinalDays"
                         type="number"
                         value={formData.playoffFinalDays}
-                        onChange={(e) => handleInputChange('playoffFinalDays', e.target.value)}
+                        onChange={e => handleInputChange('playoffFinalDays', e.target.value)}
                         data-testid="input-playoff-final-days"
                       />
                     </div>
@@ -730,7 +764,7 @@ export default function Home() {
                         id="playoffFinalsDuration"
                         type="number"
                         value={formData.playoffFinalsDuration}
-                        onChange={(e) => handleInputChange('playoffFinalsDuration', e.target.value)}
+                        onChange={e => handleInputChange('playoffFinalsDuration', e.target.value)}
                         data-testid="input-playoff-finals-duration"
                       />
                     </div>
@@ -746,7 +780,7 @@ export default function Home() {
                         id="tournamentBonus"
                         type="number"
                         value={formData.tournamentBonus}
-                        onChange={(e) => handleInputChange('tournamentBonus', e.target.value)}
+                        onChange={e => handleInputChange('tournamentBonus', e.target.value)}
                         data-testid="input-tournament-bonus"
                       />
                     </div>
@@ -756,7 +790,7 @@ export default function Home() {
                         id="federationFee"
                         type="number"
                         value={formData.federationFee}
-                        onChange={(e) => handleInputChange('federationFee', e.target.value)}
+                        onChange={e => handleInputChange('federationFee', e.target.value)}
                         data-testid="input-federation-fee"
                       />
                     </div>
@@ -766,7 +800,7 @@ export default function Home() {
                         id="transportationFee"
                         type="number"
                         value={formData.transportationFee}
-                        onChange={(e) => handleInputChange('transportationFee', e.target.value)}
+                        onChange={e => handleInputChange('transportationFee', e.target.value)}
                         data-testid="input-transportation-fee"
                       />
                     </div>
