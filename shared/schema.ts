@@ -1,4 +1,4 @@
-// [shared/schema.ts] - Version 4.0 - Validation API robuste pour les types numériques
+// [shared/schema.ts] - Version 5.0 - Ajout des champs d'identification de l'école
 import { sql } from "drizzle-orm";
 import {
   decimal,
@@ -20,6 +20,8 @@ export const users = pgTable("users", {
 export const budgetModels = pgTable("budget_models", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  schoolName: text("school_name").notNull(),
+  schoolCode: text("school_code").notNull(),
   numberOfTeams: integer("number_of_teams").notNull().default(1),
 
   // Champs dérivés de BudgetFormData
@@ -66,8 +68,9 @@ export const budgetModels = pgTable("budget_models", {
 });
 
 // Schéma pour l'insertion/mise à jour
-// MODIFICATION : Utilisation de z.coerce pour les dates ET les nombres (décimaux)
 export const insertBudgetModelSchema = createInsertSchema(budgetModels, {
+  schoolName: z.string().default("Marie-Rivier"),
+  schoolCode: z.string().default("055"),
   // Coercition pour les dates envoyées en chaîne ISO
   seasonStartDate: z.coerce.date().optional().nullable(),
   seasonEndDate: z.coerce.date().optional().nullable(),

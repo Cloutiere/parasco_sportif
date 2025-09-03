@@ -1,10 +1,12 @@
-// [client/src/types/budget.ts] - Version 8.0 - Ajout de 'gender' et 'seasonYear'
+// [client/src/types/budget.ts] - Version 9.0 - Ajout des champs d'identification de l'école
 export interface BudgetFormData {
+  schoolName: string; // NOUVEAU
+  schoolCode: string; // NOUVEAU
   discipline: string;
   level: string;
   category: string;
-  gender: string; // NOUVEAU
-  seasonYear: string; // NOUVEAU
+  gender: string;
+  seasonYear: string;
   headCoachRate: number;
   assistantCoachRate: number;
   employerContributionRate: number;

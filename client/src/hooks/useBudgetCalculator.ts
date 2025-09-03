@@ -1,4 +1,4 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 11.0 - Ajout des états par défaut pour gender et seasonYear
+// [client/src/hooks/useBudgetCalculator.ts] - Version 12.0 - Ajout des états par défaut pour l'école
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
 import { calculateActiveWeeks } from '../lib/date-utils';
@@ -8,6 +8,8 @@ import { startOfWeek } from 'date-fns';
  * L'état initial par défaut pour le formulaire du calculateur de budget.
  */
 const defaultInitialState: BudgetFormData = {
+  schoolName: 'Marie-Rivier',
+  schoolCode: '055',
   discipline: 'Handball',
   level: 'Tous',
   category: 'D4',

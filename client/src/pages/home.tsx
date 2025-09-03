@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 27.0 - Ajout du lien vsers la page de rapport
+// [client/src/pages/home.tsx] - Version 28.0 - Ajout des champs pour l'école
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter'; // Import du composant Link
@@ -41,10 +41,17 @@ export default function Home() {
 
   // Effet pour générer le nom du modèle automatiquement
   useEffect(() => {
-    const { seasonYear, discipline, gender, category, level } = formData;
-    const name = [seasonYear, discipline, gender, category, level].join(' ').trim();
+    const { seasonYear, schoolName, discipline, gender, category, level } = formData;
+    const name = [seasonYear, schoolName, discipline, gender, category, level].join(' ').trim();
     setGeneratedModelName(name);
-  }, [formData.seasonYear, formData.discipline, formData.gender, formData.category, formData.level]);
+  }, [
+    formData.seasonYear,
+    formData.schoolName,
+    formData.discipline,
+    formData.gender,
+    formData.category,
+    formData.level,
+  ]);
 
   const budgetModelsQuery = useQuery({
     queryKey: ['budgetModels'],
@@ -307,6 +314,22 @@ export default function Home() {
                         id="seasonYear"
                         value={formData.seasonYear}
                         onChange={(e) => handleInputChange('seasonYear', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="schoolName">Nom de l'école</Label>
+                      <Input
+                        id="schoolName"
+                        value={formData.schoolName}
+                        onChange={(e) => handleInputChange('schoolName', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="schoolCode">Code d'identification</Label>
+                      <Input
+                        id="schoolCode"
+                        value={formData.schoolCode}
+                        onChange={(e) => handleInputChange('schoolCode', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -666,7 +689,7 @@ export default function Home() {
 
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Autres Coûts</legend>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:col-span-2 gap-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="tournamentBonus">Frais Tournoi ($)</Label>
                       <Input
