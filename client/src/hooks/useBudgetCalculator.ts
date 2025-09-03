@@ -1,4 +1,4 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 11.0 - Ajout des états par défaut pour gender et seasonYear
+// [client/src/hooks/useBudgetCalculator.ts] - Version 12.0 - Ajout de la fonction de réinitialisation du formulaire
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
 import { calculateActiveWeeks } from '../lib/date-utils';
@@ -115,6 +115,10 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     }));
   }, []);
 
+  const resetForm = useCallback(() => {
+    setFormData(defaultInitialState);
+  }, []);
+
   const formatCurrency = useCallback((value: number): string => {
     return value.toFixed(2).replace('.', ',') + ' $';
   }, []);
@@ -125,5 +129,6 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     handleInputChange,
     formatCurrency,
     setFormData,
+    resetForm,
   };
 }
