@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 16.0 - Visualisation des semaines de congé dans les calendriers
+// [client/src/pages/home.tsx] - Version 17.0 - Correction de la logique de sélection des dates de fin
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +17,7 @@ import {
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
-import { format, startOfWeek, subMonths } from 'date-fns';
+import { format, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useState } from 'react';
 // NOUVEAU : Import de la source de vérité pour les congés
@@ -305,7 +305,7 @@ export default function Home() {
                             month={formData.seasonEndDate ? subMonths(formData.seasonEndDate, 1) : undefined}
                             selected={formData.seasonEndDate}
                             onSelect={(date) => {
-                              handleInputChange('seasonEndDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined);
+                              handleInputChange('seasonEndDate', date ? endOfWeek(date, { weekStartsOn: 0 }) : undefined);
                               setOpenPopover(null);
                             }}
                             disabled={(date) => (formData.seasonStartDate ? date < formData.seasonStartDate : false)}
@@ -442,7 +442,7 @@ export default function Home() {
                             month={formData.playoffEndDate ? subMonths(formData.playoffEndDate, 1) : undefined}
                             selected={formData.playoffEndDate}
                             onSelect={(date) => {
-                              handleInputChange('playoffEndDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined);
+                              handleInputChange('playoffEndDate', date ? endOfWeek(date, { weekStartsOn: 0 }) : undefined);
                               setOpenPopover(null);
                             }}
                             disabled={(date) => (formData.playoffStartDate ? date < formData.playoffStartDate : false)}

@@ -1,5 +1,5 @@
-// [client/src/lib/date-utils.ts] - Version 2.0 - Exportation de la configuration des congés
-import { addWeeks, isBefore, isEqual, startOfWeek } from 'date-fns';
+// [client/src/lib/date-utils.ts] - Version 3.0 - Logique de calcul basée sur la durée
+import { addWeeks, isBefore, startOfWeek } from 'date-fns';
 
 /**
  * Définit les dates de début des semaines de pause qui ne doivent pas être comptabilisées.
@@ -17,8 +17,7 @@ export const HOLIDAY_WEEKS_STARTS = new Set([
 
 /**
  * Calcule le nombre de semaines actives entre deux dates, en excluant des périodes de pause spécifiques.
- * Une semaine est considérée comme "touchée" par l'intervalle si au moins un jour de cette semaine
- * est inclus dans la plage de dates.
+ * La logique est basée sur le nombre de débuts de semaine qui précèdent la date de fin.
  *
  * @param startDate - La date de début de la période.
  * @param endDate - La date de fin de la période.
@@ -34,9 +33,9 @@ export function calculateActiveWeeks(startDate: Date | undefined, endDate: Date 
   // On commence l'itération au début de la semaine de la date de départ.
   let currentWeekStart = startOfWeek(startDate);
 
-  // On boucle tant que le début de la semaine en cours est avant la date de fin.
-  // Cela garantit que l'on inclut la semaine de la date de fin, même si elle est partielle.
-  while (isBefore(currentWeekStart, endDate) || isEqual(currentWeekStart, endDate)) {
+  // On boucle tant que le début de la semaine en cours est strictement avant la date de fin.
+  // Cela aligne le calcul sur la durée réelle de l'intervalle.
+  while (isBefore(currentWeekStart, endDate)) {
     // On vérifie si le timestamp du début de la semaine courante n'est pas dans notre liste de pauses.
     if (!HOLIDAY_WEEKS_STARTS.has(currentWeekStart.getTime())) {
       activeWeeksCount++;
