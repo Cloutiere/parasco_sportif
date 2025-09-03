@@ -1,4 +1,4 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 6.0 - Intégration du calcul des frais administratifs
+// [client/src/hooks/useBudgetCalculator.ts] - Version 8.0 - Rendre le taux de charges patronales dynamique
 
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
@@ -14,6 +14,8 @@ const defaultInitialState: BudgetFormData = {
   category: 'D4',
   headCoachRate: 35,
   assistantCoachRate: 27,
+  // NOUVEAU : Valeur par défaut pour les charges patronales.
+  employerContributionRate: 13.4,
   seasonStartDate: startOfWeek(new Date('2025-09-14'), { weekStartsOn: 0 }),
   seasonEndDate: startOfWeek(new Date('2026-03-23'), { weekStartsOn: 0 }),
   practicesPerWeek: 2,
@@ -26,8 +28,6 @@ const defaultInitialState: BudgetFormData = {
   playoffFinalsDuration: 8,
   tournamentBonus: 500,
   federationFee: 1148,
-  // NOUVEAU : Ajout de la valeur par défaut pour les frais administratifs.
-  administrativeFeePercentage: 15,
 };
 
 /**
@@ -50,35 +50,34 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     grandTotal: 0,
     activeSeasonWeeks: 0,
     activePlayoffWeeks: 0,
-    // NOUVEAU : Initialisation du montant des frais administratifs.
-    administrativeFeeAmount: 0,
   });
 
   const calculateBudget = useCallback(() => {
+    // MODIFIÉ : Le multiplicateur est désormais calculé dynamiquement à partir de l'état du formulaire.
+    const salaryMultiplier = 1 + formData.employerContributionRate / 100;
+
     const activeSeasonWeeks = calculateActiveWeeks(formData.seasonStartDate, formData.seasonEndDate);
     const activePlayoffWeeks = calculateActiveWeeks(formData.playoffStartDate, formData.playoffEndDate);
 
     const totalCoachRatePerHour = formData.headCoachRate + formData.assistantCoachRate;
 
     const totalPracticeHoursSeason = activeSeasonWeeks * formData.practicesPerWeek * formData.practiceDuration;
-    const costSeasonPractices = totalPracticeHoursSeason * totalCoachRatePerHour;
+    const costSeasonPractices = totalPracticeHoursSeason * totalCoachRatePerHour * salaryMultiplier;
 
     const totalGameHoursSeason = formData.numGames * formData.gameDuration;
-    const costSeasonGames = totalGameHoursSeason * totalCoachRatePerHour;
+    const costSeasonGames = totalGameHoursSeason * totalCoachRatePerHour * salaryMultiplier;
+
+
 
     const totalPracticeHoursPlayoffs = activePlayoffWeeks * formData.practicesPerWeek * formData.practiceDuration;
-    const costPlayoffPractices = totalPracticeHoursPlayoffs * totalCoachRatePerHour;
+    const costPlayoffPractices = totalPracticeHoursPlayoffs * totalCoachRatePerHour * salaryMultiplier;
 
     const totalPlayoffFinalHours = formData.playoffFinalDays * formData.playoffFinalsDuration;
-    const costPlayoffFinals = totalPlayoffFinalHours * totalCoachRatePerHour;
+    const costPlayoffFinals = totalPlayoffFinalHours * totalCoachRatePerHour * salaryMultiplier;
 
     const totalCoachingSalaries = costSeasonPractices + costSeasonGames + costPlayoffPractices + costPlayoffFinals;
 
-    // NOUVEAU : Calcul du montant des frais administratifs basé sur le pourcentage.
-    const administrativeFeeAmount = (totalCoachingSalaries * formData.administrativeFeePercentage) / 100;
-
-    // MODIFIÉ : Le grand total inclut maintenant les frais administratifs.
-    const grandTotal = totalCoachingSalaries + administrativeFeeAmount + formData.tournamentBonus + formData.federationFee;
+    const grandTotal = totalCoachingSalaries + formData.tournamentBonus + formData.federationFee;
 
     setResults({
       costSeasonPractices,
@@ -91,8 +90,6 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
       grandTotal,
       activeSeasonWeeks,
       activePlayoffWeeks,
-      // NOUVEAU : Mise à jour de l'état des résultats avec le montant calculé.
-      administrativeFeeAmount,
     });
   }, [formData]);
 

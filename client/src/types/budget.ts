@@ -1,4 +1,4 @@
-// [client/src/types/budget.ts] - Version 4.0 - Ajout des frais administratifs
+// [client/src/types/budget.ts] - Version 6.0 - Réintroduction d'un taux de charges patronales modifiable
 
 export interface BudgetFormData {
   discipline: string;
@@ -6,6 +6,8 @@ export interface BudgetFormData {
   category: string;
   headCoachRate: number;
   assistantCoachRate: number;
+  // NOUVEAU : Taux des charges patronales (en pourcentage).
+  employerContributionRate: number;
   seasonStartDate: Date | undefined;
   seasonEndDate: Date | undefined;
   practicesPerWeek: number;
@@ -18,8 +20,6 @@ export interface BudgetFormData {
   playoffFinalsDuration: number;
   tournamentBonus: number;
   federationFee: number;
-  // NOUVEAU : Pourcentage des frais administratifs.
-  administrativeFeePercentage: number;
 }
 
 export interface BudgetResults {
@@ -33,6 +33,4 @@ export interface BudgetResults {
   grandTotal: number;
   activeSeasonWeeks: number;
   activePlayoffWeeks: number;
-  // NOUVEAU : Montant calculé des frais administratifs.
-  administrativeFeeAmount: number;
 }

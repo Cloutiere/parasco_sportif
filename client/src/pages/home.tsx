@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 17.0 - Correction de la logique de sélection des dates de fin
+// [client/src/pages/home.tsx] - Version 22.0 - Correction de la largeur du champ Part employeur
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,6 @@ import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { format, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useState } from 'react';
-// NOUVEAU : Import de la source de vérité pour les congés
 import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
@@ -34,7 +33,6 @@ export default function Home() {
     color: 'hsl(215, 30%, 25%)',
   };
 
-  // NOUVEAU : Style pour les semaines de congé
   const holidayStyle = {
     backgroundColor: 'hsl(210, 30%, 95%)',
   };
@@ -53,7 +51,6 @@ export default function Home() {
         : undefined,
   };
 
-  // NOUVEAU : Modificateur pour identifier les jours dans une semaine de congé
   const holidayModifier = {
     holiday: (date: Date) =>
       HOLIDAY_WEEKS_STARTS.has(startOfWeek(date, { weekStartsOn: 0 }).getTime()),
@@ -65,7 +62,6 @@ export default function Home() {
       'Matchs (Saison)',
       'Entraînements (Séries)',
       'Finales (Séries)',
-      'Frais Administratifs',
       'Bonus Tournoi',
       'Frais Fédération',
     ],
@@ -76,7 +72,6 @@ export default function Home() {
           results.costSeasonGames,
           results.costPlayoffPractices,
           results.costPlayoffFinals,
-          results.administrativeFeeAmount,
           results.tournamentBonus,
           results.federationFee,
         ],
@@ -85,7 +80,6 @@ export default function Home() {
           'hsl(195, 80%, 45%)',
           'hsl(175, 70%, 50%)',
           'hsl(160, 60%, 55%)',
-          'hsl(110, 50%, 65%)',
           'hsl(145, 50%, 60%)',
           'hsl(130, 40%, 65%)',
         ],
@@ -155,62 +149,65 @@ export default function Home() {
                 {/* ... fieldsets ... */}
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Informations de l'Équipe</legend>
-                  {/* ... Contenu inchangé ... */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="discipline">Discipline</Label>
-                      <Select
-                        value={formData.discipline}
-                        onValueChange={(value) => handleInputChange('discipline', value)}
-                      >
-                        <SelectTrigger data-testid="select-discipline">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Handball">Handball</SelectItem>
-                          <SelectItem value="Basketball">Basketball</SelectItem>
-                          <SelectItem value="Volleyball">Volleyball</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="discipline">Discipline</Label>
+                        <Select
+                          value={formData.discipline}
+                          onValueChange={(value) => handleInputChange('discipline', value)}
+                        >
+                          <SelectTrigger data-testid="select-discipline">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Handball">Handball</SelectItem>
+                            <SelectItem value="Basketball">Basketball</SelectItem>
+                            <SelectItem value="Volleyball">Volleyball</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="category">Catégorie</Label>
+                        <Select
+                          value={formData.category}
+                          onValueChange={(value) => handleInputChange('category', value)}
+                        >
+                          <SelectTrigger data-testid="select-category">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="D2">D2</SelectItem>
+                            <SelectItem value="D3">D3</SelectItem>
+                            <SelectItem value="D4">D4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="level">Niveau</Label>
-                      <Select
-                        value={formData.level}
-                        onValueChange={(value) => handleInputChange('level', value)}
-                      >
-                        <SelectTrigger data-testid="select-level">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Benjamin">Benjamin</SelectItem>
-                          <SelectItem value="Cadet">Cadet</SelectItem>
-                          <SelectItem value="Juvenile">Juvénile</SelectItem>
-                          <SelectItem value="Tous">Tous</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Catégorie</Label>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value) => handleInputChange('category', value)}
-                      >
-                        <SelectTrigger data-testid="select-category">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="D2">D2</SelectItem>
-                          <SelectItem value="D3">D3</SelectItem>
-                          <SelectItem value="D4">D4</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="level">Niveau</Label>
+                        <Select
+                          value={formData.level}
+                          onValueChange={(value) => handleInputChange('level', value)}
+                        >
+                          <SelectTrigger data-testid="select-level">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Benjamin">Benjamin</SelectItem>
+                            <SelectItem value="Cadet">Cadet</SelectItem>
+                            <SelectItem value="Juvenile">Juvénile</SelectItem>
+                            <SelectItem value="Tous">Tous</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </fieldset>
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Entraîneurs</legend>
-                  {/* ... Contenu inchangé ... */}
+                  {/* MODIFIÉ : Utilisation d'une seule grille pour les trois champs pour un alignement parfait */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="headCoachRate">Taux horaire Chef ($/h)</Label>
@@ -230,6 +227,17 @@ export default function Home() {
                         value={formData.assistantCoachRate}
                         onChange={(e) => handleInputChange('assistantCoachRate', e.target.value)}
                         data-testid="input-assistant-coach-rate"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="employerContributionRate">Part employeur (%)</Label>
+                      <Input
+                        id="employerContributionRate"
+                        type="number"
+                        step="0.1"
+                        value={formData.employerContributionRate}
+                        onChange={(e) => handleInputChange('employerContributionRate', e.target.value)}
+                        data-testid="input-employer-contribution-rate"
                       />
                     </div>
                   </div>
@@ -502,16 +510,6 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="administrativeFeePercentage">Frais administratifs (%)</Label>
-                      <Input
-                        id="administrativeFeePercentage"
-                        type="number"
-                        value={formData.administrativeFeePercentage}
-                        onChange={(e) => handleInputChange('administrativeFeePercentage', e.target.value)}
-                        data-testid="input-admin-fee-percentage"
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="federationFee">Frais Fédération (RSEQ) ($)</Label>
                       <Input
                         id="federationFee"
@@ -577,12 +575,6 @@ export default function Home() {
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold" data-testid="text-total-coaching">
                           {formatCurrency(results.totalCoachingSalaries)}
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4">Frais administratifs</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-admin-fee">
-                          {formatCurrency(results.administrativeFeeAmount)}
                         </td>
                       </tr>
                       <tr className="hover:bg-muted/50 transition-colors">
