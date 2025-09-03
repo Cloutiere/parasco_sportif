@@ -1,4 +1,4 @@
-// [shared/schema.ts] - Version 7.0 - Refonte du type DetailedReportLine pour ventiler les salaires
+// [shared/schema.ts] - Version 11.0 - Suppression de la colonne Transport du rapport
 import { sql } from "drizzle-orm";
 import {
   decimal,
@@ -107,7 +107,8 @@ export type BudgetModel = typeof budgetModels.$inferSelect;
 
 /**
  * Définit la structure d'une ligne de données pour le rapport financier détaillé.
- * La structure est modifiée pour ventiler les coûts salariaux par rôle (chef/adjoint).
+ * La structure est modifiée pour ventiler les coûts salariaux par rôle (chef/adjoint)
+ * et inclure les dates clés.
  */
 export type DetailedReportLine = {
   modelId: string;
@@ -115,21 +116,25 @@ export type DetailedReportLine = {
   gender: string;
   category: string;
   level: string;
-  numberOfTeams: number;
+  numberOfTeams: number; // Conserve l'information d'origine du modèle
 
-  // Coûts saison régulière
+  // Dates
+  seasonStartDate: Date | null;
+  seasonEndDate: Date | null;
+  playoffEndDate: Date | null;
+
+  // Coûts saison régulière (par équipe)
   costSeasonHeadCoach: number;
   costSeasonAssistantCoach: number;
   tournamentBonus: number;
-  transportationFee: number;
   federationFee: number;
   subTotalRegularSeason: number;
 
-  // Coûts séries
+  // Coûts séries (par équipe)
   costPlayoffsHeadCoach: number;
   costPlayoffsAssistantCoach: number;
   subTotalPlayoffs: number;
 
-  // Total
+  // Total (par équipe)
   grandTotal: number;
 };

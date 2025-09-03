@@ -1,4 +1,4 @@
-// [client/src/pages/report.tsx] - Version 3.0 - Ventilation des salaires, formatage entier et layout élargi
+// [client/src/pages/report.tsx] - Version 8.0 - Correction finale du défilement horizontal
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
@@ -29,13 +29,11 @@ type ProcessedReportData = {
   grandTotal: DetailedReportLine;
 };
 
-// Initialisateur mis à jour pour correspondre à la nouvelle structure de DetailedReportLine.
-const zeroedReportLine: Omit<DetailedReportLine, "modelId" | "discipline" | "gender" | "category" | "level"> = {
+const zeroedReportLine: Omit<DetailedReportLine, "modelId" | "discipline" | "gender" | "category" | "level" | "seasonStartDate" | "seasonEndDate" | "playoffEndDate"> = {
   numberOfTeams: 0,
   costSeasonHeadCoach: 0,
   costSeasonAssistantCoach: 0,
   tournamentBonus: 0,
-  transportationFee: 0,
   federationFee: 0,
   subTotalRegularSeason: 0,
   costPlayoffsHeadCoach: 0,
@@ -43,6 +41,20 @@ const zeroedReportLine: Omit<DetailedReportLine, "modelId" | "discipline" | "gen
   subTotalPlayoffs: 0,
   grandTotal: 0,
 };
+
+/**
+ * Formate un objet Date ou une chaîne en 'yy-MM-dd'.
+ * Retourne 'N/A' si la date est nulle ou invalide.
+ */
+function formatDate(date: Date | string | null | undefined): string {
+  if (!date) return 'N/A';
+  try {
+    const isoString = new Date(date).toISOString().split('T')[0]; // "2025-09-14"
+    return isoString.substring(2); // "25-09-14"
+  } catch (error) {
+    return 'N/A';
+  }
+}
 
 export default function ReportPage() {
   const { formatCurrency } = useBudgetCalculator();
@@ -86,33 +98,48 @@ export default function ReportPage() {
     return { grouped, disciplineTotals, grandTotal };
   }, [reportQuery.data]);
 
-  // En-têtes mis à jour pour refléter la ventilation des salaires.
   const tableHeaders = [
     "Sexe", "Cat.", "Niv.",
-    "Salaire Chef Saison", "Salaire Adj. Saison", "Tournoi", "Transport", "Fédération", "Sous-Total Saison",
+    "Début Saison", "Fin Saison", "Fin Séries",
+    "Salaire Chef Saison", "Salaire Adj. Saison", "Tournoi", "Fédération", "Sous-Total Saison",
     "Salaire Chef Séries", "Salaire Adj. Séries", "Sous-Total Séries",
-    "Total Modèle"
+    "Total"
   ];
 
+  const isNumericHeader = (header: string) => ![
+    "Sexe", "Cat.", "Niv.", "Début Saison", "Fin Saison", "Fin Séries", "Total"
+  ].includes(header);
+
+  const getHeaderClasses = (header: string): string => {
+    if (header === "Total") {
+      return "min-w-[140px] text-right"; 
+    }
+    if (isNumericHeader(header)) {
+      return "min-w-[110px] text-right";
+    }
+    if (["Début Saison", "Fin Saison", "Fin Séries"].includes(header)) {
+      return "min-w-[95px] text-center";
+    }
+    return "min-w-[80px]";
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Conteneur élargi à max-w-screen-2xl */}
+    <div className="min-h-screen bg-background overflow-x-auto">
       <header className="bg-primary text-primary-foreground shadow-lg">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center space-x-4">
             <div className="bg-primary-foreground/10 p-3 rounded-lg">
               <FileText className="w-8 h-8 text-primary-foreground" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">Rapport Financier Détaillé</h1>
-              <p className="text-primary-foreground/80 mt-1">Analyse des coûts par modèle, groupés par discipline.</p>
+              <p className="text-primary-foreground/80 mt-1">Analyse des coûts par équipe, groupés par discipline.</p>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Conteneur élargi à max-w-screen-2xl */}
-      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between border-b border-border">
             <CardTitle className="text-xl font-semibold text-primary">
@@ -140,11 +167,16 @@ export default function ReportPage() {
               </div>
             )}
             {reportQuery.isSuccess && processedData && (
-              <div className="overflow-x-auto">
+              // L'ancienne div "overflow-x-auto" a été retirée d'ici pour centraliser le défilement.
+              <div>
                 <Table className="min-w-full text-sm">
                   <TableHeader>
                     <TableRow>
-                      {tableHeaders.map(header => <TableHead key={header} className={["Sexe", "Cat.", "Niv."].includes(header) ? "w-[80px]" : "text-right"}>{header}</TableHead>)}
+                      {tableHeaders.map(header => (
+                        <TableHead key={header} className={getHeaderClasses(header)}>
+                          {header}
+                        </TableHead>
+                      ))}
                     </TableRow>
                   </TableHeader>
 
@@ -166,31 +198,31 @@ export default function ReportPage() {
                             </TableCell>
                           </TableRow>
 
-                          {models.map(model => (
-                            <TableRow key={model.modelId}>
+                          {models.map((model, index) => (
+                            <TableRow key={`${model.modelId}-${index}`}>
                               <TableCell>{model.gender}</TableCell>
                               <TableCell>{model.category}</TableCell>
                               <TableCell>{model.level}</TableCell>
-                              {/* Liaison des nouvelles données de salaire */}
+                              <TableCell className="text-center font-mono">{formatDate(model.seasonStartDate)}</TableCell>
+                              <TableCell className="text-center font-mono">{formatDate(model.seasonEndDate)}</TableCell>
+                              <TableCell className="text-center font-mono">{formatDate(model.playoffEndDate)}</TableCell>
                               <TableCell className="text-right font-mono">{formatCurrency(model.costSeasonHeadCoach)}</TableCell>
                               <TableCell className="text-right font-mono">{formatCurrency(model.costSeasonAssistantCoach)}</TableCell>
                               <TableCell className="text-right font-mono">{formatCurrency(model.tournamentBonus)}</TableCell>
-                              <TableCell className="text-right font-mono">{formatCurrency(model.transportationFee)}</TableCell>
                               <TableCell className="text-right font-mono">{formatCurrency(model.federationFee)}</TableCell>
                               <TableCell className="text-right font-mono font-semibold bg-secondary/30">{formatCurrency(model.subTotalRegularSeason)}</TableCell>
                               <TableCell className="text-right font-mono">{formatCurrency(model.costPlayoffsHeadCoach)}</TableCell>
                               <TableCell className="text-right font-mono">{formatCurrency(model.costPlayoffsAssistantCoach)}</TableCell>
                               <TableCell className="text-right font-mono font-semibold bg-secondary/30">{formatCurrency(model.subTotalPlayoffs)}</TableCell>
-                              <TableCell className="text-right font-mono font-bold text-base bg-secondary">{formatCurrency(model.grandTotal)}</TableCell>
+                              <TableCell className="text-right font-mono bg-secondary">{formatCurrency(model.grandTotal)}</TableCell>
                             </TableRow>
                           ))}
 
                           <TableRow className="bg-muted hover:bg-muted">
-                            <TableCell colSpan={3} className="text-right font-bold text-base">Sous-Total {discipline}</TableCell>
+                            <TableCell colSpan={6} className="text-right font-bold text-base">Sous-Total {discipline}</TableCell>
                             <TableCell className="text-right font-mono font-bold text-base">{formatCurrency(processedData.disciplineTotals[discipline].costSeasonHeadCoach)}</TableCell>
                             <TableCell className="text-right font-mono font-bold text-base">{formatCurrency(processedData.disciplineTotals[discipline].costSeasonAssistantCoach)}</TableCell>
                             <TableCell className="text-right font-mono font-bold text-base">{formatCurrency(processedData.disciplineTotals[discipline].tournamentBonus)}</TableCell>
-                            <TableCell className="text-right font-mono font-bold text-base">{formatCurrency(processedData.disciplineTotals[discipline].transportationFee)}</TableCell>
                             <TableCell className="text-right font-mono font-bold text-base">{formatCurrency(processedData.disciplineTotals[discipline].federationFee)}</TableCell>
                             <TableCell className="text-right font-mono font-bold text-base bg-secondary/50">{formatCurrency(processedData.disciplineTotals[discipline].subTotalRegularSeason)}</TableCell>
                             <TableCell className="text-right font-mono font-bold text-base">{formatCurrency(processedData.disciplineTotals[discipline].costPlayoffsHeadCoach)}</TableCell>
@@ -203,11 +235,10 @@ export default function ReportPage() {
 
                       <TableFooter className="bg-primary text-primary-foreground">
                         <TableRow>
-                          <TableCell colSpan={3} className="text-right font-extrabold text-xl">GRAND TOTAL</TableCell>
+                          <TableCell colSpan={6} className="text-right font-extrabold text-xl">GRAND TOTAL</TableCell>
                           <TableCell className="text-right font-mono font-extrabold text-base">{formatCurrency(processedData.grandTotal.costSeasonHeadCoach)}</TableCell>
                           <TableCell className="text-right font-mono font-extrabold text-base">{formatCurrency(processedData.grandTotal.costSeasonAssistantCoach)}</TableCell>
                           <TableCell className="text-right font-mono font-extrabold text-base">{formatCurrency(processedData.grandTotal.tournamentBonus)}</TableCell>
-                          <TableCell className="text-right font-mono font-extrabold text-base">{formatCurrency(processedData.grandTotal.transportationFee)}</TableCell>
                           <TableCell className="text-right font-mono font-extrabold text-base">{formatCurrency(processedData.grandTotal.federationFee)}</TableCell>
                           <TableCell className="text-right font-mono font-extrabold text-base">{formatCurrency(processedData.grandTotal.subTotalRegularSeason)}</TableCell>
                           <TableCell className="text-right font-mono font-extrabold text-base">{formatCurrency(processedData.grandTotal.costPlayoffsHeadCoach)}</TableCell>
