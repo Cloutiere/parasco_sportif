@@ -1,5 +1,5 @@
-// [client/src/pages/home.tsx] - Version 29.0 - Ajout de la fonctionnalité d'export Excel
-import { useState, useEffect } from 'react';
+// [client/src/pages/home.tsx] - Version 30.0 - Implémentation de la logique de mise à jour (Upsert)
+import { useState, useEffect, useMemo } from 'react'; // Ajout de useMemo
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Settings, BarChart3, Calculator, CalendarIcon, Archive, FileText, Trash2, FileDown } from 'lucide-react'; // Import de FileDown
+import { Settings, BarChart3, Calculator, CalendarIcon, Archive, FileText, Trash2, FileDown } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { format, startOfWeek, endOfWeek, subMonths } from 'date-fns';
@@ -17,8 +17,8 @@ import { fr } from 'date-fns/locale';
 
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
-import { createBudgetModel, getBudgetModels } from '../lib/api-client';
-import { exportToExcel } from '../lib/excel-export'; // NOUVEL IMPORT
+import { createBudgetModel, getBudgetModels, updateBudgetModel } from '../lib/api-client'; // Ajout de updateBudgetModel
+import { exportToExcel } from '../lib/excel-export';
 import type { InsertBudgetModel, BudgetModel } from '@shared/schema';
 import { useToast } from '../hooks/use-toast';
 
@@ -34,6 +34,21 @@ export default function Home() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const budgetModelsQuery = useQuery({
+    queryKey: ['budgetModels'],
+    queryFn: getBudgetModels,
+  });
+
+  // Détection du mode édition : le modèle existe-t-il déjà ?
+  const existingModel = useMemo(() => {
+    if (!budgetModelsQuery.data || !generatedModelName) {
+      return undefined;
+    }
+    // Ne pas considérer le modèle actuellement chargé comme "existant" à écraser par un autre.
+    // L'upsert se base sur le nom, pas sur l'ID chargé.
+    return budgetModelsQuery.data.find(model => model.name === generatedModelName);
+  }, [budgetModelsQuery.data, generatedModelName]);
+
   // Effet pour générer le nom du modèle automatiquement
   useEffect(() => {
     const { seasonYear, schoolName, discipline, gender, category, level } = formData;
@@ -47,11 +62,6 @@ export default function Home() {
     formData.category,
     formData.level,
   ]);
-
-  const budgetModelsQuery = useQuery({
-    queryKey: ['budgetModels'],
-    queryFn: getBudgetModels,
-  });
 
   const createModelMutation = useMutation({
     mutationFn: (payload: InsertBudgetModel) => createBudgetModel(payload),
@@ -67,6 +77,26 @@ export default function Home() {
         variant: 'destructive',
         title: 'Erreur',
         description: 'Erreur lors de la sauvegarde du modèle.',
+      });
+    },
+  });
+
+  // NOUVELLE MUTATION pour la mise à jour
+  const updateModelMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<InsertBudgetModel> }) =>
+      updateBudgetModel(id, payload),
+    onSuccess: () => {
+      toast({
+        title: 'Succès',
+        description: 'Modèle mis à jour avec succès !',
+      });
+      queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
+    },
+    onError: () => {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Erreur lors de la mise à jour du modèle.',
       });
     },
   });
@@ -106,8 +136,8 @@ export default function Home() {
     }
   };
 
+  // MISE À JOUR de la logique de sauvegarde
   const handleSaveModel = () => {
-    // Format dates to ISO strings for backend compatibility
     const payload: InsertBudgetModel = {
       ...formData,
       name: generatedModelName,
@@ -117,10 +147,16 @@ export default function Home() {
       playoffStartDate: formData.playoffStartDate ? formData.playoffStartDate.toISOString() : null,
       playoffEndDate: formData.playoffEndDate ? formData.playoffEndDate.toISOString() : null,
     };
-    createModelMutation.mutate(payload);
+
+    if (existingModel) {
+      // Si le modèle existe, on le met à jour
+      updateModelMutation.mutate({ id: existingModel.id, payload });
+    } else {
+      // Sinon, on le crée
+      createModelMutation.mutate(payload);
+    }
   };
 
-  // NOUVELLE FONCTION
   const handleExportClick = () => {
     exportToExcel(formData, results, generatedModelName);
   };
@@ -245,6 +281,8 @@ export default function Home() {
     },
   };
 
+  const isSaving = createModelMutation.isPending || updateModelMutation.isPending;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header ... */}
@@ -322,14 +360,16 @@ export default function Home() {
                 </div>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-4">
-                    <Button
-                      onClick={handleSaveModel}
-                      disabled={createModelMutation.isPending || !generatedModelName}
-                      className="w-full"
-                    >
-                      {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
+                    {/* MISE À JOUR DU BOUTON DE SAUVEGARDE */}
+                    <Button onClick={handleSaveModel} disabled={isSaving || !generatedModelName} className="w-full">
+                      {isSaving
+                        ? existingModel
+                          ? 'Mise à jour...'
+                          : 'Sauvegarde...'
+                        : existingModel
+                          ? 'Mettre à jour le modèle'
+                          : 'Sauvegarder le modèle'}
                     </Button>
-                    {/* NOUVEAU BOUTON D'EXPORT */}
                     <Button onClick={handleExportClick} variant="outline">
                       <FileDown className="mr-2 h-4 w-4" />
                       Exporter en Excel

@@ -1,4 +1,4 @@
-// [client/src/lib/api-client.ts] - Version 3.0 - Ajout de la récupération du rapport par discipline
+// [client/src/lib/api-client.ts] - Version 4.0 - Ajout de la mise à jour (update) de modèle
 import type { BudgetModel, InsertBudgetModel } from '@shared/schema';
 import { apiRequest } from './queryClient';
 
@@ -18,6 +18,17 @@ export async function createBudgetModel(data: InsertBudgetModel): Promise<Budget
  */
 export async function getBudgetModels(): Promise<BudgetModel[]> {
   const res = await apiRequest('GET', '/api/budget-models');
+  return await res.json();
+}
+
+/**
+ * Met à jour un modèle de budget existant sur le serveur.
+ * @param id - L'identifiant du modèle de budget à mettre à jour.
+ * @param data - Les données (partielles) du modèle de budget à mettre à jour.
+ * @returns Le modèle de budget mis à jour.
+ */
+export async function updateBudgetModel(id: string, data: Partial<InsertBudgetModel>): Promise<BudgetModel> {
+  const res = await apiRequest('PUT', `/api/budget-models/${id}`, data);
   return await res.json();
 }
 
