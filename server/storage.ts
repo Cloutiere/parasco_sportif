@@ -1,7 +1,8 @@
-// [server/storage.ts] - Version 6.0 - Implémentation ReplitDbStorage persistante
+// [server/storage.ts] - Version 8.0 - Adaptation du calcul du rapport détaillé pour ventiler les salaires
 import Database from "@replit/database";
 import {
   type BudgetModel,
+  type DetailedReportLine,
   type InsertBudgetModel,
   type InsertUser,
   type User,
@@ -43,6 +44,7 @@ export interface IStorage {
 
   // Reporting methods
   getBudgetSummaryByDiscipline(): Promise<{ discipline: string; totalCost: number }[]>;
+  getDetailedReport(): Promise<DetailedReportLine[]>;
 }
 
 /**
@@ -83,7 +85,7 @@ export class ReplitDbStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     const keysResult: any = await this.db.list(this.USER_PREFIX);
     if (!keysResult?.ok || !Array.isArray(keysResult.value)) return undefined;
-    
+
     for (const key of keysResult.value) {
       const userResult: any = await this.db.get(key);
       const user = userResult?.value as User;
@@ -210,13 +212,13 @@ export class ReplitDbStorage implements IStorage {
     if (!keysResult?.ok || !Array.isArray(keysResult.value) || keysResult.value.length === 0) {
       return { success: true, deletedCount: 0 };
     }
-    
+
     console.log("DEBUG: Clearing all budget models, keys found:", keysResult.value);
-    
+
     // Supprimer chaque clé une par une
     const deletePromises = keysResult.value.map((key: string) => this.db.delete(key));
     await Promise.all(deletePromises);
-    
+
     return { success: true, deletedCount: keysResult.value.length };
   }
 
@@ -267,6 +269,73 @@ export class ReplitDbStorage implements IStorage {
       discipline,
       totalCost,
     }));
+  }
+
+  async getDetailedReport(): Promise<DetailedReportLine[]> {
+    const allModels = await this.getBudgetModels();
+    const reportLines: DetailedReportLine[] = [];
+
+    for (const model of allModels) {
+      // --- Calculs de base ---
+      const salaryMultiplier = 1 + Number(model.employerContributionRate) / 100;
+      const activeSeasonWeeks = calculateActiveWeeks(model.seasonStartDate, model.seasonEndDate);
+      const activePlayoffWeeks = calculateActiveWeeks(model.playoffStartDate, model.playoffEndDate);
+
+      // --- Calculs des heures totales par phase ---
+      const totalSeasonHours = 
+        (activeSeasonWeeks * model.practicesPerWeek * Number(model.practiceDuration)) +
+        (model.numGames * Number(model.gameDuration));
+
+      const totalPlayoffsHours =
+        (activePlayoffWeeks * model.practicesPerWeek * Number(model.practiceDuration)) +
+        (model.playoffFinalDays * Number(model.playoffFinalsDuration));
+
+      // --- Calcul des coûts bruts par rôle (avant multiplication par nombre d'équipes) ---
+      const baseCostSeasonHeadCoach = totalSeasonHours * Number(model.headCoachRate) * salaryMultiplier;
+      const baseCostSeasonAssistantCoach = totalSeasonHours * Number(model.assistantCoachRate) * salaryMultiplier;
+      const baseCostPlayoffsHeadCoach = totalPlayoffsHours * Number(model.headCoachRate) * salaryMultiplier;
+      const baseCostPlayoffsAssistantCoach = totalPlayoffsHours * Number(model.assistantCoachRate) * salaryMultiplier;
+
+      // --- Application du multiplicateur par nombre d'équipes ---
+      const costSeasonHeadCoach = baseCostSeasonHeadCoach * model.numberOfTeams;
+      const costSeasonAssistantCoach = baseCostSeasonAssistantCoach * model.numberOfTeams;
+      const costPlayoffsHeadCoach = baseCostPlayoffsHeadCoach * model.numberOfTeams;
+      const costPlayoffsAssistantCoach = baseCostPlayoffsAssistantCoach * model.numberOfTeams;
+      const tournamentBonus = Number(model.tournamentBonus) * model.numberOfTeams;
+      const transportationFee = Number(model.transportationFee) * model.numberOfTeams;
+      const federationFee = Number(model.federationFee) * model.numberOfTeams;
+
+      // --- Calcul des sous-totaux et total ---
+      const subTotalRegularSeason =
+        costSeasonHeadCoach +
+        costSeasonAssistantCoach +
+        tournamentBonus +
+        transportationFee +
+        federationFee;
+      const subTotalPlayoffs = costPlayoffsHeadCoach + costPlayoffsAssistantCoach;
+      const grandTotal = subTotalRegularSeason + subTotalPlayoffs;
+
+      reportLines.push({
+        modelId: model.id,
+        discipline: model.discipline,
+        gender: model.gender,
+        category: model.category,
+        level: model.level,
+        numberOfTeams: model.numberOfTeams,
+        costSeasonHeadCoach,
+        costSeasonAssistantCoach,
+        tournamentBonus,
+        transportationFee,
+        federationFee,
+        subTotalRegularSeason,
+        costPlayoffsHeadCoach,
+        costPlayoffsAssistantCoach,
+        subTotalPlayoffs,
+        grandTotal,
+      });
+    }
+
+    return reportLines;
   }
 }
 

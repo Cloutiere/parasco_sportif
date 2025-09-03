@@ -1,4 +1,4 @@
-// [shared/schema.ts] - Version 5.0 - Ajout des champs d'identification de l'école
+// [shared/schema.ts] - Version 7.0 - Refonte du type DetailedReportLine pour ventiler les salaires
 import { sql } from "drizzle-orm";
 import {
   decimal,
@@ -104,3 +104,32 @@ export type User = typeof users.$inferSelect;
 
 export type InsertBudgetModel = z.infer<typeof insertBudgetModelSchema>;
 export type BudgetModel = typeof budgetModels.$inferSelect;
+
+/**
+ * Définit la structure d'une ligne de données pour le rapport financier détaillé.
+ * La structure est modifiée pour ventiler les coûts salariaux par rôle (chef/adjoint).
+ */
+export type DetailedReportLine = {
+  modelId: string;
+  discipline: string;
+  gender: string;
+  category: string;
+  level: string;
+  numberOfTeams: number;
+
+  // Coûts saison régulière
+  costSeasonHeadCoach: number;
+  costSeasonAssistantCoach: number;
+  tournamentBonus: number;
+  transportationFee: number;
+  federationFee: number;
+  subTotalRegularSeason: number;
+
+  // Coûts séries
+  costPlayoffsHeadCoach: number;
+  costPlayoffsAssistantCoach: number;
+  subTotalPlayoffs: number;
+
+  // Total
+  grandTotal: number;
+};

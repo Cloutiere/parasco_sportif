@@ -1,5 +1,5 @@
-// [client/src/lib/api-client.ts] - Version 4.0 - Ajout de la mise à jour (update) de modèle
-import type { BudgetModel, InsertBudgetModel } from '@shared/schema';
+// [client/src/lib/api-client.ts] - Version 5.0 - Ajout de la récupération du rapport détaillé
+import type { BudgetModel, DetailedReportLine, InsertBudgetModel } from '@shared/schema';
 import { apiRequest } from './queryClient';
 
 /**
@@ -38,6 +38,15 @@ export async function updateBudgetModel(id: string, data: Partial<InsertBudgetMo
  */
 export async function getDisciplineReport(): Promise<{ discipline: string; totalCost: number }[]> {
   const res = await apiRequest('GET', '/api/reports/by-discipline');
+  return await res.json();
+}
+
+/**
+ * Récupère le rapport financier détaillé, ligne par ligne pour chaque modèle.
+ * @returns Une promesse résolue avec le rapport détaillé.
+ */
+export async function getDetailedReport(): Promise<DetailedReportLine[]> {
+  const res = await apiRequest('GET', '/api/reports/detailed');
   return await res.json();
 }
 

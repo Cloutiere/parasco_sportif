@@ -1,4 +1,4 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 12.0 - Ajout des états par défaut pour l'école
+// [client/src/hooks/useBudgetCalculator.ts] - Version 13.0 - Arrondissement des devises à l'entier
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
 import { calculateActiveWeeks } from '../lib/date-utils';
@@ -118,7 +118,8 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
   }, []);
 
   const formatCurrency = useCallback((value: number): string => {
-    return value.toFixed(2).replace('.', ',') + ' $';
+    // Arrondit à l'entier le plus proche et formate sans décimales.
+    return Math.round(value).toFixed(0) + ' $';
   }, []);
 
   return {

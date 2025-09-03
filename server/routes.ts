@@ -1,4 +1,4 @@
-// [server/routes.ts] - Version 2.0 - Ajout de l'endpoint pour le rapport par discipline
+// [server/routes.ts] - Version 3.0 - Ajout de l'endpoint pour le rapport détaillé
 import { insertBudgetModelSchema } from "@shared/schema";
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
@@ -10,6 +10,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json());
 
   // --- Reports API Routes ---
+
+  // GET /api/reports/detailed: Récupère le rapport financier détaillé par modèle
+  app.get("/api/reports/detailed", async (req, res) => {
+    try {
+      const reportData = await storage.getDetailedReport();
+      res.status(200).json(reportData);
+    } catch (error) {
+      console.error("Error generating detailed report:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
 
   // GET /api/reports/by-discipline: Récupère le rapport agrégé des coûts par discipline
   app.get("/api/reports/by-discipline", async (req, res) => {
