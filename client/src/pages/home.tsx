@@ -342,9 +342,9 @@ export default function Home() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Handball">Handball</SelectItem>
-                          <SelectItem value="Basketball">Basketball</SelectItem>
-                          <SelectItem value="Volleyball">Volleyball</SelectItem>
+                          <SelectItem key="Handball" value="Handball">Handball</SelectItem>
+                          <SelectItem key="Basketball" value="Basketball">Basketball</SelectItem>
+                          <SelectItem key="Volleyball" value="Volleyball">Volleyball</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -358,8 +358,8 @@ export default function Home() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Féminin">Féminin</SelectItem>
-                          <SelectItem value="Masculin">Masculin</SelectItem>
+                          <SelectItem key="Féminin" value="Féminin">Féminin</SelectItem>
+                          <SelectItem key="Masculin" value="Masculin">Masculin</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -373,9 +373,9 @@ export default function Home() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="D2">D2</SelectItem>
-                          <SelectItem value="D3">D3</SelectItem>
-                          <SelectItem value="D4">D4</SelectItem>
+                          <SelectItem key="D2" value="D2">D2</SelectItem>
+                          <SelectItem key="D3" value="D3">D3</SelectItem>
+                          <SelectItem key="D4" value="D4">D4</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -389,10 +389,10 @@ export default function Home() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Benjamin">Benjamin</SelectItem>
-                          <SelectItem value="Cadet">Cadet</SelectItem>
-                          <SelectItem value="Juvenile">Juvénile</SelectItem>
-                          <SelectItem value="Tous">Tous</SelectItem>
+                          <SelectItem key="Benjamin" value="Benjamin">Benjamin</SelectItem>
+                          <SelectItem key="Cadet" value="Cadet">Cadet</SelectItem>
+                          <SelectItem key="Juvenile" value="Juvenile">Juvénile</SelectItem>
+                          <SelectItem key="Tous" value="Tous">Tous</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
