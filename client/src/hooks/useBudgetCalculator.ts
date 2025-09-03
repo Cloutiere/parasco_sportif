@@ -1,4 +1,4 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 10.0 - Exposition de setFormData pour le chargement de modèles
+// [client/src/hooks/useBudgetCalculator.ts] - Version 11.0 - Ajout des états par défaut pour gender et seasonYear
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
 import { calculateActiveWeeks } from '../lib/date-utils';
@@ -11,6 +11,8 @@ const defaultInitialState: BudgetFormData = {
   discipline: 'Handball',
   level: 'Tous',
   category: 'D4',
+  gender: 'Féminin',
+  seasonYear: '2025-2026',
   headCoachRate: 35,
   assistantCoachRate: 27,
   employerContributionRate: 13.4,

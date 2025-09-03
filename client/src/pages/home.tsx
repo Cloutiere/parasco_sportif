@@ -1,5 +1,5 @@
-// [client/src/pages/home.tsx] - Version 25.0 - Implémentation du chargement de modèle via useQuery
-import { useState } from 'react';
+// [client/src/pages/home.tsx] - Version 26.0 - Nom de modèle généré automatiquement
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -32,11 +32,18 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 export default function Home() {
   const { formData, results, handleInputChange, formatCurrency, setFormData } = useBudgetCalculator();
   const [openPopover, setOpenPopover] = useState<string | null>(null);
-  const [modelName, setModelName] = useState('');
+  const [generatedModelName, setGeneratedModelName] = useState('');
   const [numberOfTeams, setNumberOfTeams] = useState(1);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Effet pour générer le nom du modèle automatiquement
+  useEffect(() => {
+    const { seasonYear, discipline, gender, category, level } = formData;
+    const name = [seasonYear, discipline, gender, category, level].join(' ').trim();
+    setGeneratedModelName(name);
+  }, [formData.seasonYear, formData.discipline, formData.gender, formData.category, formData.level]);
 
   const budgetModelsQuery = useQuery({
     queryKey: ['budgetModels'],
@@ -51,7 +58,6 @@ export default function Home() {
         description: 'Modèle sauvegardé avec succès !',
       });
       queryClient.invalidateQueries({ queryKey: ['budgetModels'] });
-      setModelName('');
     },
     onError: () => {
       toast({
@@ -66,7 +72,7 @@ export default function Home() {
     // Format dates to ISO strings for backend compatibility
     const payload: InsertBudgetModel = {
       ...formData,
-      name: modelName,
+      name: generatedModelName,
       numberOfTeams,
       seasonStartDate: formData.seasonStartDate ? formData.seasonStartDate.toISOString() : null,
       seasonEndDate: formData.seasonEndDate ? formData.seasonEndDate.toISOString() : null,
@@ -80,7 +86,6 @@ export default function Home() {
     const model = budgetModelsQuery.data?.find(m => m.id === modelId);
     if (!model) return;
 
-    setModelName(model.name);
     setNumberOfTeams(model.numberOfTeams);
 
     // Convertir les chaînes de l'API en types attendus par le formulaire
@@ -249,13 +254,10 @@ export default function Home() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="modelName">Nom du modèle</Label>
-                  <Input
-                    id="modelName"
-                    value={modelName}
-                    onChange={(e) => setModelName(e.target.value)}
-                    placeholder="Ex: Benjamin D2 Handball 2024-2025"
-                  />
+                  <Label>Nom du Modèle (généré automatiquement)</Label>
+                  <div className="w-full rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    {generatedModelName || "Veuillez remplir les informations de l'équipe..."}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="numberOfTeams">Nombre d’équipes</Label>
@@ -269,7 +271,7 @@ export default function Home() {
                 </div>
                 <Button
                   onClick={handleSaveModel}
-                  disabled={createModelMutation.isPending || !modelName}
+                  disabled={createModelMutation.isPending || !generatedModelName}
                   className="w-full"
                 >
                   {createModelMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder le modèle'}
@@ -290,58 +292,77 @@ export default function Home() {
                 <fieldset className="border border-border rounded-lg p-4 bg-muted/30">
                   <legend className="text-sm font-medium text-primary px-3 bg-background">Informations de l'Équipe</legend>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="discipline">Discipline</Label>
-                        <Select
-                          value={formData.discipline}
-                          onValueChange={(value) => handleInputChange('discipline', value)}
-                        >
-                          <SelectTrigger data-testid="select-discipline">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Handball">Handball</SelectItem>
-                            <SelectItem value="Basketball">Basketball</SelectItem>
-                            <SelectItem value="Volleyball">Volleyball</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="category">Catégorie</Label>
-                        <Select
-                          value={formData.category}
-                          onValueChange={(value) => handleInputChange('category', value)}
-                        >
-                          <SelectTrigger data-testid="select-category">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="D2">D2</SelectItem>
-                            <SelectItem value="D3">D3</SelectItem>
-                            <SelectItem value="D4">D4</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="seasonYear">Année scolaire</Label>
+                      <Input
+                        id="seasonYear"
+                        value={formData.seasonYear}
+                        onChange={(e) => handleInputChange('seasonYear', e.target.value)}
+                      />
                     </div>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="level">Niveau</Label>
-                        <Select
-                          value={formData.level}
-                          onValueChange={(value) => handleInputChange('level', value)}
-                        >
-                          <SelectTrigger data-testid="select-level">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Benjamin">Benjamin</SelectItem>
-                            <SelectItem value="Cadet">Cadet</SelectItem>
-                            <SelectItem value="Juvenile">Juvénile</SelectItem>
-                            <SelectItem value="Tous">Tous</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="discipline">Discipline</Label>
+                      <Select
+                        value={formData.discipline}
+                        onValueChange={(value) => handleInputChange('discipline', value)}
+                      >
+                        <SelectTrigger data-testid="select-discipline">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Handball">Handball</SelectItem>
+                          <SelectItem value="Basketball">Basketball</SelectItem>
+                          <SelectItem value="Volleyball">Volleyball</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="gender">Sexe</Label>
+                      <Select
+                        value={formData.gender}
+                        onValueChange={(value) => handleInputChange('gender', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Féminin">Féminin</SelectItem>
+                          <SelectItem value="Masculin">Masculin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Catégorie</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => handleInputChange('category', value)}
+                      >
+                        <SelectTrigger data-testid="select-category">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="D2">D2</SelectItem>
+                          <SelectItem value="D3">D3</SelectItem>
+                          <SelectItem value="D4">D4</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="level">Niveau</Label>
+                      <Select
+                        value={formData.level}
+                        onValueChange={(value) => handleInputChange('level', value)}
+                      >
+                        <SelectTrigger data-testid="select-level">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Benjamin">Benjamin</SelectItem>
+                          <SelectItem value="Cadet">Cadet</SelectItem>
+                          <SelectItem value="Juvenile">Juvénile</SelectItem>
+                          <SelectItem value="Tous">Tous</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </fieldset>

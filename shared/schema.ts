@@ -1,4 +1,4 @@
-// [shared/schema.ts] - Version 1.0 - Ajout du modèle de données pour les Budget Models
+// [shared/schema.ts] - Version 2.0 - Ajout du genre et de l'année scolaire
 import { sql } from "drizzle-orm";
 import {
   decimal,
@@ -23,6 +23,8 @@ export const budgetModels = pgTable("budget_models", {
   numberOfTeams: integer("number_of_teams").notNull().default(1),
 
   // Champs dérivés de BudgetFormData
+  seasonYear: text("season_year").notNull(), // NOUVEAU
+  gender: text("gender").notNull(), // NOUVEAU
   discipline: text("discipline").notNull(),
   level: text("level").notNull(),
   category: text("category").notNull(),
@@ -38,13 +40,13 @@ export const budgetModels = pgTable("budget_models", {
   seasonStartDate: timestamp("season_start_date"),
   seasonEndDate: timestamp("season_end_date"),
   practicesPerWeek: integer("practices_per_week").notNull(),
-  practiceDuration: integer("practice_duration").notNull(),
+  practiceDuration: decimal("practice_duration", { precision: 10, scale: 2 }).notNull(),
   numGames: integer("num_games").notNull(),
-  gameDuration: integer("game_duration").notNull(),
+  gameDuration: decimal("game_duration", { precision: 10, scale: 2 }).notNull(),
   playoffStartDate: timestamp("playoff_start_date"),
   playoffEndDate: timestamp("playoff_end_date"),
   playoffFinalDays: integer("playoff_final_days").notNull(),
-  playoffFinalsDuration: integer("playoff_finals_duration").notNull(),
+  playoffFinalsDuration: decimal("playoff_finals_duration", { precision: 10, scale: 2 }).notNull(),
   tournamentBonus: decimal("tournament_bonus", {
     precision: 10,
     scale: 2,

@@ -1,8 +1,10 @@
-// [client/src/types/budget.ts] - Version 7.0 - Ajout des frais de transport et des sous-totaux
+// [client/src/types/budget.ts] - Version 8.0 - Ajout de 'gender' et 'seasonYear'
 export interface BudgetFormData {
   discipline: string;
   level: string;
   category: string;
+  gender: string; // NOUVEAU
+  seasonYear: string; // NOUVEAU
   headCoachRate: number;
   assistantCoachRate: number;
   employerContributionRate: number;
@@ -18,7 +20,7 @@ export interface BudgetFormData {
   playoffFinalsDuration: number;
   tournamentBonus: number;
   federationFee: number;
-  transportationFee: number; // NOUVEAU
+  transportationFee: number;
 }
 
 export interface BudgetResults {
@@ -31,6 +33,6 @@ export interface BudgetResults {
   grandTotal: number;
   activeSeasonWeeks: number;
   activePlayoffWeeks: number;
-  subTotalRegularSeason: number; // NOUVEAU
-  subTotalPlayoffs: number; // NOUVEAU
+  subTotalRegularSeason: number;
+  subTotalPlayoffs: number;
 }
