@@ -1,5 +1,4 @@
-// [client/src/lib/date-utils.ts] - Version 1.0 - Création de l'utilitaire de calcul de semaines actives
-
+// [client/src/lib/date-utils.ts] - Version 2.0 - Exportation de la configuration des congés
 import { addWeeks, isBefore, isEqual, startOfWeek } from 'date-fns';
 
 /**
@@ -7,7 +6,7 @@ import { addWeeks, isBefore, isEqual, startOfWeek } from 'date-fns';
  * Une semaine est définie par son premier jour (dimanche). Si une date de pause tombe
  * n'importe quel jour de la semaine, la semaine entière est exclue.
  */
-const HOLIDAY_WEEKS_STARTS = new Set([
+export const HOLIDAY_WEEKS_STARTS = new Set([
   // Semaine de Noël (21 déc 2025 tombe un dimanche)
   startOfWeek(new Date('2025-12-21')).getTime(),
   // Semaine du Nouvel An (28 déc 2025 tombe un dimanche)

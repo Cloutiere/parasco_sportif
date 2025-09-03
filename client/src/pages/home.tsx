@@ -1,5 +1,4 @@
-// [client/src/pages/home.tsx] - Version 15.0 - Gestion manuelle de l'état des Popovers pour une fermeture fiable
-
+// [client/src/pages/home.tsx] - Version 16.0 - Visualisation des semaines de congé dans les calendriers
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,26 +7,26 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Settings, BarChart3, Calculator, CalendarIcon } from 'lucide-react';
-import { 
-  Chart as ChartJS, 
-  ArcElement, 
-  Tooltip, 
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
   Legend,
   CategoryScale,
-  LinearScale
+  LinearScale,
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { useBudgetCalculator } from '../hooks/useBudgetCalculator'; 
+import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import { format, startOfWeek, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-// NOUVEAU : Import de useState
 import { useState } from 'react';
+// NOUVEAU : Import de la source de vérité pour les congés
+import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
 export default function Home() {
   const { formData, results, handleInputChange, formatCurrency } = useBudgetCalculator();
-  // NOUVEAU : État pour contrôler manuellement l'ouverture des popovers
   const [openPopover, setOpenPopover] = useState<string | null>(null);
 
   const rangeStyle = {
@@ -35,16 +34,29 @@ export default function Home() {
     color: 'hsl(215, 30%, 25%)',
   };
 
+  // NOUVEAU : Style pour les semaines de congé
+  const holidayStyle = {
+    backgroundColor: 'hsl(210, 30%, 95%)',
+  };
+
   const seasonModifiers = {
-    range: (formData.seasonStartDate && formData.seasonEndDate) 
-      ? { from: formData.seasonStartDate, to: formData.seasonEndDate } 
-      : undefined,
+    range:
+      formData.seasonStartDate && formData.seasonEndDate
+        ? { from: formData.seasonStartDate, to: formData.seasonEndDate }
+        : undefined,
   };
 
   const playoffModifiers = {
-    range: (formData.playoffStartDate && formData.playoffEndDate)
-      ? { from: formData.playoffStartDate, to: formData.playoffEndDate }
-      : undefined,
+    range:
+      formData.playoffStartDate && formData.playoffEndDate
+        ? { from: formData.playoffStartDate, to: formData.playoffEndDate }
+        : undefined,
+  };
+
+  // NOUVEAU : Modificateur pour identifier les jours dans une semaine de congé
+  const holidayModifier = {
+    holiday: (date: Date) =>
+      HOLIDAY_WEEKS_STARTS.has(startOfWeek(date, { weekStartsOn: 0 }).getTime()),
   };
 
   const chartData = {
@@ -55,30 +67,32 @@ export default function Home() {
       'Finales (Séries)',
       'Frais Administratifs',
       'Bonus Tournoi',
-      'Frais Fédération'
+      'Frais Fédération',
     ],
-    datasets: [{
-      data: [
-        results.costSeasonPractices,
-        results.costSeasonGames,
-        results.costPlayoffPractices,
-        results.costPlayoffFinals,
-        results.administrativeFeeAmount,
-        results.tournamentBonus,
-        results.federationFee
-      ],
-      backgroundColor: [
-        'hsl(213, 100%, 35%)',
-        'hsl(195, 80%, 45%)',
-        'hsl(175, 70%, 50%)',
-        'hsl(160, 60%, 55%)',
-        'hsl(110, 50%, 65%)',
-        'hsl(145, 50%, 60%)',
-        'hsl(130, 40%, 65%)'
-      ],
-      borderWidth: 2,
-      borderColor: '#fff'
-    }]
+    datasets: [
+      {
+        data: [
+          results.costSeasonPractices,
+          results.costSeasonGames,
+          results.costPlayoffPractices,
+          results.costPlayoffFinals,
+          results.administrativeFeeAmount,
+          results.tournamentBonus,
+          results.federationFee,
+        ],
+        backgroundColor: [
+          'hsl(213, 100%, 35%)',
+          'hsl(195, 80%, 45%)',
+          'hsl(175, 70%, 50%)',
+          'hsl(160, 60%, 55%)',
+          'hsl(110, 50%, 65%)',
+          'hsl(145, 50%, 60%)',
+          'hsl(130, 40%, 65%)',
+        ],
+        borderWidth: 2,
+        borderColor: '#fff',
+      },
+    ],
   };
 
   const chartOptions = {
@@ -92,20 +106,20 @@ export default function Home() {
           usePointStyle: true,
           font: {
             family: 'Inter',
-            size: 12
-          }
-        }
+            size: 12,
+          },
+        },
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             const value = context.parsed;
             const formatted = formatCurrency(value);
             return `${context.label}: ${formatted}`;
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   };
 
   return (
@@ -145,8 +159,8 @@ export default function Home() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="discipline">Discipline</Label>
-                      <Select 
-                        value={formData.discipline} 
+                      <Select
+                        value={formData.discipline}
                         onValueChange={(value) => handleInputChange('discipline', value)}
                       >
                         <SelectTrigger data-testid="select-discipline">
@@ -161,8 +175,8 @@ export default function Home() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="level">Niveau</Label>
-                      <Select 
-                        value={formData.level} 
+                      <Select
+                        value={formData.level}
                         onValueChange={(value) => handleInputChange('level', value)}
                       >
                         <SelectTrigger data-testid="select-level">
@@ -178,8 +192,8 @@ export default function Home() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category">Catégorie</Label>
-                      <Select 
-                        value={formData.category} 
+                      <Select
+                        value={formData.category}
                         onValueChange={(value) => handleInputChange('category', value)}
                       >
                         <SelectTrigger data-testid="select-category">
@@ -227,19 +241,19 @@ export default function Home() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
                       <Label>Début de la saison</Label>
-                      <Popover 
+                      <Popover
                         open={openPopover === 'seasonStartDate'}
                         onOpenChange={(isOpen) => setOpenPopover(isOpen ? 'seasonStartDate' : null)}
                       >
                         <PopoverTrigger asChild>
                           <Button
-                            variant={"outline"}
+                            variant={'outline'}
                             className="w-full justify-start text-left font-normal"
                             data-testid="date-start-season-trigger"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {formData.seasonStartDate ? (
-                              format(formData.seasonStartDate, "d MMM yyyy", { locale: fr })
+                              format(formData.seasonStartDate, 'd MMM yyyy', { locale: fr })
                             ) : (
                               <span>Choisir une date</span>
                             )}
@@ -254,13 +268,11 @@ export default function Home() {
                               handleInputChange('seasonStartDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined);
                               setOpenPopover(null);
                             }}
-                            disabled={(date) =>
-                              formData.seasonEndDate ? date > formData.seasonEndDate : false
-                            }
+                            disabled={(date) => (formData.seasonEndDate ? date > formData.seasonEndDate : false)}
                             initialFocus
                             numberOfMonths={3}
-                            modifiers={seasonModifiers}
-                            modifiersStyles={{ range: rangeStyle }}
+                            modifiers={{ ...seasonModifiers, ...holidayModifier }}
+                            modifiersStyles={{ range: rangeStyle, holiday: holidayStyle }}
                             showOutsideDays={false}
                           />
                         </PopoverContent>
@@ -275,13 +287,13 @@ export default function Home() {
                       >
                         <PopoverTrigger asChild>
                           <Button
-                            variant={"outline"}
+                            variant={'outline'}
                             className="w-full justify-start text-left font-normal"
                             data-testid="date-end-season-trigger"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {formData.seasonEndDate ? (
-                              format(formData.seasonEndDate, "d MMM yyyy", { locale: fr })
+                              format(formData.seasonEndDate, 'd MMM yyyy', { locale: fr })
                             ) : (
                               <span>Choisir une date</span>
                             )}
@@ -296,13 +308,11 @@ export default function Home() {
                               handleInputChange('seasonEndDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined);
                               setOpenPopover(null);
                             }}
-                            disabled={(date) =>
-                              formData.seasonStartDate ? date < formData.seasonStartDate : false
-                            }
+                            disabled={(date) => (formData.seasonStartDate ? date < formData.seasonStartDate : false)}
                             initialFocus
                             numberOfMonths={3}
-                            modifiers={seasonModifiers}
-                            modifiersStyles={{ range: rangeStyle }}
+                            modifiers={{ ...seasonModifiers, ...holidayModifier }}
+                            modifiersStyles={{ range: rangeStyle, holiday: holidayStyle }}
                             showOutsideDays={false}
                           />
                         </PopoverContent>
@@ -311,7 +321,10 @@ export default function Home() {
                     {/* ... */}
                     <div className="md:col-span-2 text-center bg-muted/50 p-2 rounded-md">
                       <p className="text-sm text-muted-foreground">
-                        Durée calculée : <strong className="text-primary" data-testid="text-active-season-weeks">{results.activeSeasonWeeks} semaines actives</strong>
+                        Durée calculée :{' '}
+                        <strong className="text-primary" data-testid="text-active-season-weeks">
+                          {results.activeSeasonWeeks} semaines actives
+                        </strong>
                       </p>
                     </div>
                     <div className="space-y-2">
@@ -365,19 +378,19 @@ export default function Home() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
                       <Label>Début des séries</Label>
-                       <Popover
+                      <Popover
                         open={openPopover === 'playoffStartDate'}
                         onOpenChange={(isOpen) => setOpenPopover(isOpen ? 'playoffStartDate' : null)}
-                       >
+                      >
                         <PopoverTrigger asChild>
                           <Button
-                            variant={"outline"}
+                            variant={'outline'}
                             className="w-full justify-start text-left font-normal"
                             data-testid="date-start-playoffs-trigger"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {formData.playoffStartDate ? (
-                              format(formData.playoffStartDate, "d MMM yyyy", { locale: fr })
+                              format(formData.playoffStartDate, 'd MMM yyyy', { locale: fr })
                             ) : (
                               <span>Choisir une date</span>
                             )}
@@ -392,13 +405,11 @@ export default function Home() {
                               handleInputChange('playoffStartDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined);
                               setOpenPopover(null);
                             }}
-                            disabled={(date) =>
-                              formData.playoffEndDate ? date > formData.playoffEndDate : false
-                            }
+                            disabled={(date) => (formData.playoffEndDate ? date > formData.playoffEndDate : false)}
                             initialFocus
                             numberOfMonths={3}
-                            modifiers={playoffModifiers}
-                            modifiersStyles={{ range: rangeStyle }}
+                            modifiers={{ ...playoffModifiers, ...holidayModifier }}
+                            modifiersStyles={{ range: rangeStyle, holiday: holidayStyle }}
                             showOutsideDays={false}
                           />
                         </PopoverContent>
@@ -413,13 +424,13 @@ export default function Home() {
                       >
                         <PopoverTrigger asChild>
                           <Button
-                            variant={"outline"}
+                            variant={'outline'}
                             className="w-full justify-start text-left font-normal"
                             data-testid="date-end-playoffs-trigger"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {formData.playoffEndDate ? (
-                              format(formData.playoffEndDate, "d MMM yyyy", { locale: fr })
+                              format(formData.playoffEndDate, 'd MMM yyyy', { locale: fr })
                             ) : (
                               <span>Choisir une date</span>
                             )}
@@ -434,13 +445,11 @@ export default function Home() {
                               handleInputChange('playoffEndDate', date ? startOfWeek(date, { weekStartsOn: 0 }) : undefined);
                               setOpenPopover(null);
                             }}
-                            disabled={(date) =>
-                              formData.playoffStartDate ? date < formData.playoffStartDate : false
-                            }
+                            disabled={(date) => (formData.playoffStartDate ? date < formData.playoffStartDate : false)}
                             initialFocus
                             numberOfMonths={3}
-                            modifiers={playoffModifiers}
-                            modifiersStyles={{ range: rangeStyle }}
+                            modifiers={{ ...playoffModifiers, ...holidayModifier }}
+                            modifiersStyles={{ range: rangeStyle, holiday: holidayStyle }}
                             showOutsideDays={false}
                           />
                         </PopoverContent>
@@ -449,7 +458,10 @@ export default function Home() {
                     {/* ... */}
                     <div className="md:col-span-2 text-center bg-muted/50 p-2 rounded-md">
                       <p className="text-sm text-muted-foreground">
-                        Durée calculée : <strong className="text-primary" data-testid="text-active-playoff-weeks">{results.activePlayoffWeeks} semaines actives</strong>
+                        Durée calculée :{' '}
+                        <strong className="text-primary" data-testid="text-active-playoff-weeks">
+                          {results.activePlayoffWeeks} semaines actives
+                        </strong>
                       </p>
                     </div>
                     <div className="space-y-2">
@@ -560,7 +572,9 @@ export default function Home() {
                         </td>
                       </tr>
                       <tr className="bg-muted/70 font-medium">
-                        <td className="py-3 px-4"><strong>Sous-total Salaires Entraîneurs</strong></td>
+                        <td className="py-3 px-4">
+                          <strong>Sous-total Salaires Entraîneurs</strong>
+                        </td>
                         <td className="py-3 px-4 text-right font-mono font-bold" data-testid="text-total-coaching">
                           {formatCurrency(results.totalCoachingSalaries)}
                         </td>
