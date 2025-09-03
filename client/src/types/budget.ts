@@ -1,7 +1,7 @@
-// [client/src/types/budget.ts] - Version 9.0 - Ajout des champs d'identification de l'école
+// [client/src/types/budget.ts] - Version 10.0 - Refonte des coûts par rôle (chef/adjoint)
 export interface BudgetFormData {
-  schoolName: string; // NOUVEAU
-  schoolCode: string; // NOUVEAU
+  schoolName: string;
+  schoolCode: string;
   discipline: string;
   level: string;
   category: string;
@@ -26,12 +26,19 @@ export interface BudgetFormData {
 }
 
 export interface BudgetResults {
-  costSeasonPractices: number;
-  costSeasonGames: number;
-  costPlayoffPractices: number;
-  costPlayoffFinals: number;
+  // Coûts saison régulière ventilés par rôle
+  costSeasonHeadCoach: number;
+  costSeasonAssistantCoach: number;
+
+  // Coûts séries ventilés par rôle
+  costPlayoffsHeadCoach: number;
+  costPlayoffsAssistantCoach: number;
+
+  // Frais fixes
   tournamentBonus: number;
   federationFee: number;
+
+  // Totaux et métriques
   grandTotal: number;
   activeSeasonWeeks: number;
   activePlayoffWeeks: number;

@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 32.0 - Synchronisation du cache du rapport après suppression
+// [client/src/pages/home.tsx] - Version 33.0 - Affichage des coûts par rôle (chef/adjoint)
 import { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
@@ -214,12 +214,13 @@ export default function Home() {
     holiday: (date: Date) => HOLIDAY_WEEKS_STARTS.has(startOfWeek(date, { weekStartsOn: 0 }).getTime()),
   };
 
+  // MODIFIÉ: Les libellés et les données du graphique sont mis à jour
   const chartData = {
     labels: [
-      'Entraînements (Saison)',
-      'Matchs (Saison)',
-      'Entraînements (Séries)',
-      'Finales (Séries)',
+      'Salaire Chef (Saison)',
+      'Salaire Adjoint (Saison)',
+      'Salaire Chef (Séries)',
+      'Salaire Adjoint (Séries)',
       'Frais Tournoi',
       'Frais de transport',
       'Frais Fédération',
@@ -227,10 +228,10 @@ export default function Home() {
     datasets: [
       {
         data: [
-          results.costSeasonPractices,
-          results.costSeasonGames,
-          results.costPlayoffPractices,
-          results.costPlayoffFinals,
+          results.costSeasonHeadCoach,
+          results.costSeasonAssistantCoach,
+          results.costPlayoffsHeadCoach,
+          results.costPlayoffsAssistantCoach,
           results.tournamentBonus,
           formData.transportationFee,
           results.federationFee,
@@ -864,16 +865,23 @@ export default function Home() {
                           Saison Régulière
                         </th>
                       </tr>
+                      {/* MODIFIÉ: Affichage des coûts par rôle */}
                       <tr className="hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4">Entraînements (Saison régulière)</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-season-practices">
-                          {formatCurrency(results.costSeasonPractices)}
+                        <td className="py-3 px-4">Salaire Chef (Saison)</td>
+                        <td
+                          className="py-3 px-4 text-right font-mono font-semibold"
+                          data-testid="text-season-head-coach"
+                        >
+                          {formatCurrency(results.costSeasonHeadCoach)}
                         </td>
                       </tr>
                       <tr className="hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4">Matchs (Saison régulière)</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-season-games">
-                          {formatCurrency(results.costSeasonGames)}
+                        <td className="py-3 px-4">Salaire Adjoint (Saison)</td>
+                        <td
+                          className="py-3 px-4 text-right font-mono font-semibold"
+                          data-testid="text-season-assistant-coach"
+                        >
+                          {formatCurrency(results.costSeasonAssistantCoach)}
                         </td>
                       </tr>
                       <tr className="hover:bg-muted/50 transition-colors">
@@ -908,16 +916,23 @@ export default function Home() {
                           Séries (Playoffs)
                         </th>
                       </tr>
+                      {/* MODIFIÉ: Affichage des coûts par rôle */}
                       <tr className="hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4">Entraînements (Séries)</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-playoff-practices">
-                          {formatCurrency(results.costPlayoffPractices)}
+                        <td className="py-3 px-4">Salaire Chef (Séries)</td>
+                        <td
+                          className="py-3 px-4 text-right font-mono font-semibold"
+                          data-testid="text-playoffs-head-coach"
+                        >
+                          {formatCurrency(results.costPlayoffsHeadCoach)}
                         </td>
                       </tr>
                       <tr className="hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4">Journées de finales (Séries)</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold" data-testid="text-playoff-finals">
-                          {formatCurrency(results.costPlayoffFinals)}
+                        <td className="py-3 px-4">Salaire Adjoint (Séries)</td>
+                        <td
+                          className="py-3 px-4 text-right font-mono font-semibold"
+                          data-testid="text-playoffs-assistant-coach"
+                        >
+                          {formatCurrency(results.costPlayoffsAssistantCoach)}
                         </td>
                       </tr>
                       <tr className="bg-muted/70 font-medium">

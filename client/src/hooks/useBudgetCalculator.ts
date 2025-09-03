@@ -1,8 +1,8 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 13.0 - Arrondissement des devises à l'entier
+// [client/src/hooks/useBudgetCalculator.ts] - Version 15.0 - Correction de la logique de liaison des dates
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
 import { calculateActiveWeeks } from '../lib/date-utils';
-import { startOfWeek } from 'date-fns';
+import { addDays, startOfWeek } from 'date-fns'; // MODIFIÉ: Ajout de 'addDays'
 
 /**
  * L'état initial par défaut pour le formulaire du calculateur de budget.
@@ -17,7 +17,7 @@ const defaultInitialState: BudgetFormData = {
   seasonYear: '2025-2026',
   headCoachRate: 35,
   assistantCoachRate: 27,
-  employerContributionRate: 13.4,
+  employerContributionRate: 0,
   seasonStartDate: startOfWeek(new Date('2025-09-14'), { weekStartsOn: 0 }),
   seasonEndDate: startOfWeek(new Date('2026-03-23'), { weekStartsOn: 0 }),
   practicesPerWeek: 2,
@@ -43,10 +43,10 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
   });
 
   const [results, setResults] = useState<BudgetResults>({
-    costSeasonPractices: 0,
-    costSeasonGames: 0,
-    costPlayoffPractices: 0,
-    costPlayoffFinals: 0,
+    costSeasonHeadCoach: 0,
+    costSeasonAssistantCoach: 0,
+    costPlayoffsHeadCoach: 0,
+    costPlayoffsAssistantCoach: 0,
     tournamentBonus: 0,
     federationFee: 0,
     grandTotal: 0,
@@ -57,43 +57,43 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
   });
 
   const calculateBudget = useCallback(() => {
+    // --- Calculs de base ---
     const salaryMultiplier = 1 + formData.employerContributionRate / 100;
-
     const activeSeasonWeeks = calculateActiveWeeks(formData.seasonStartDate, formData.seasonEndDate);
     const activePlayoffWeeks = calculateActiveWeeks(formData.playoffStartDate, formData.playoffEndDate);
 
-    const totalCoachRatePerHour = formData.headCoachRate + formData.assistantCoachRate;
+    // --- Calculs des heures totales par phase (pour une équipe) ---
+    const totalSeasonHours =
+      activeSeasonWeeks * formData.practicesPerWeek * formData.practiceDuration +
+      formData.numGames * formData.gameDuration;
 
-    // Calculs des coûts individuels
-    const totalPracticeHoursSeason = activeSeasonWeeks * formData.practicesPerWeek * formData.practiceDuration;
-    const costSeasonPractices = totalPracticeHoursSeason * totalCoachRatePerHour * salaryMultiplier;
+    const totalPlayoffsHours =
+      activePlayoffWeeks * formData.practicesPerWeek * formData.practiceDuration +
+      formData.playoffFinalDays * formData.playoffFinalsDuration;
 
-    const totalGameHoursSeason = formData.numGames * formData.gameDuration;
-    const costSeasonGames = totalGameHoursSeason * totalCoachRatePerHour * salaryMultiplier;
+    // --- Calcul des coûts par rôle (pour UNE SEULE équipe) ---
+    const costSeasonHeadCoach = totalSeasonHours * formData.headCoachRate * salaryMultiplier;
+    const costSeasonAssistantCoach = totalSeasonHours * formData.assistantCoachRate * salaryMultiplier;
+    const costPlayoffsHeadCoach = totalPlayoffsHours * formData.headCoachRate * salaryMultiplier;
+    const costPlayoffsAssistantCoach = totalPlayoffsHours * formData.assistantCoachRate * salaryMultiplier;
 
-    const totalPracticeHoursPlayoffs = activePlayoffWeeks * formData.practicesPerWeek * formData.practiceDuration;
-    const costPlayoffPractices = totalPracticeHoursPlayoffs * totalCoachRatePerHour * salaryMultiplier;
-
-    const totalPlayoffFinalHours = formData.playoffFinalDays * formData.playoffFinalsDuration;
-    const costPlayoffFinals = totalPlayoffFinalHours * totalCoachRatePerHour * salaryMultiplier;
-
-    // Calcul des nouveaux sous-totaux
-    const subTotalPlayoffs = costPlayoffPractices + costPlayoffFinals;
+    // --- Calcul des sous-totaux et total (pour UNE SEULE équipe) ---
     const subTotalRegularSeason =
-      costSeasonPractices +
-      costSeasonGames +
+      costSeasonHeadCoach +
+      costSeasonAssistantCoach +
       formData.tournamentBonus +
       formData.transportationFee +
       formData.federationFee;
 
-    // Calcul du total général
+    const subTotalPlayoffs = costPlayoffsHeadCoach + costPlayoffsAssistantCoach;
     const grandTotal = subTotalRegularSeason + subTotalPlayoffs;
 
+    // MISE À JOUR de l'objet de résultats
     setResults({
-      costSeasonPractices,
-      costSeasonGames,
-      costPlayoffPractices,
-      costPlayoffFinals,
+      costSeasonHeadCoach,
+      costSeasonAssistantCoach,
+      costPlayoffsHeadCoach,
+      costPlayoffsAssistantCoach,
       tournamentBonus: formData.tournamentBonus,
       federationFee: formData.federationFee,
       grandTotal,
@@ -104,10 +104,6 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     });
   }, [formData]);
 
-  useEffect(() => {
-    calculateBudget();
-  }, [calculateBudget]);
-
   const handleInputChange = useCallback((field: keyof BudgetFormData, value: string | number | Date | undefined) => {
     const isNumericField = typeof defaultInitialState[field] === 'number' && typeof value === 'string';
 
@@ -116,6 +112,21 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
       [field]: isNumericField ? Number(value) : value,
     }));
   }, []);
+
+  // MODIFIÉ: La logique assure maintenant que les séries commencent la semaine SUIVANT la fin de saison.
+  useEffect(() => {
+    if (formData.seasonEndDate) {
+      // Le lendemain de la fin de saison
+      const dayAfterSeasonEnd = addDays(formData.seasonEndDate, 1);
+      // On s'assure de commencer au début de la semaine qui suit
+      const startOfPlayoffWeek = startOfWeek(dayAfterSeasonEnd, { weekStartsOn: 0 });
+      handleInputChange('playoffStartDate', startOfPlayoffWeek);
+    }
+  }, [formData.seasonEndDate, handleInputChange]);
+
+  useEffect(() => {
+    calculateBudget();
+  }, [calculateBudget]);
 
   const formatCurrency = useCallback((value: number): string => {
     // Arrondit à l'entier le plus proche et formate sans décimales.
