@@ -1,4 +1,4 @@
-// [server/storage.ts] - Version 12.0 - Enrichissement des données du rapport détaillé avec les paramètres de configuration
+// [server/storage.ts] - Version 13.0 - Centralisation de la logique de calcul des semaines actives
 import Database from "@replit/database";
 import {
   type BudgetModel,
@@ -8,21 +8,7 @@ import {
   type User,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { differenceInCalendarWeeks } from "date-fns";
-
-/**
- * Calcule le nombre de semaines actives entre deux dates, en ignorant les semaines de congé.
- * @param start - La date de début.
- * @param end - La date de fin.
- * @returns Le nombre de semaines actives.
- */
-function calculateActiveWeeks(start: Date | null, end: Date | null): number {
-  if (!start || !end || start > end) {
-    return 0;
-  }
-  // +1 car differenceInCalendarWeeks est exclusif (0 pour la même semaine)
-  return differenceInCalendarWeeks(end, start, { weekStartsOn: 0 }) + 1;
-}
+import { calculateActiveWeeks } from "@shared/date-utils";
 
 // L'interface définit le contrat que nos classes de stockage doivent respecter.
 export interface IStorage {

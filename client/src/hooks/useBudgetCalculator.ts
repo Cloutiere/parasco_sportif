@@ -1,8 +1,8 @@
-// [client/src/hooks/useBudgetCalculator.ts] - Version 15.0 - Correction de la logique de liaison des dates
+// [client/src/hooks/useBudgetCalculator.ts] - Version 16.0 - Utilisation du module de calcul partagé
 import { useState, useEffect, useCallback } from 'react';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
-import { calculateActiveWeeks } from '../lib/date-utils';
-import { addDays, startOfWeek } from 'date-fns'; // MODIFIÉ: Ajout de 'addDays'
+import { calculateActiveWeeks } from '@shared/date-utils';
+import { addDays, startOfWeek } from 'date-fns';
 
 /**
  * L'état initial par défaut pour le formulaire du calculateur de budget.
@@ -113,7 +113,7 @@ export function useBudgetCalculator(initialState?: Partial<BudgetFormData>) {
     }));
   }, []);
 
-  // MODIFIÉ: La logique assure maintenant que les séries commencent la semaine SUIVANT la fin de saison.
+  // La logique assure maintenant que les séries commencent la semaine SUIVANT la fin de saison.
   useEffect(() => {
     if (formData.seasonEndDate) {
       // Le lendemain de la fin de saison
