@@ -1,4 +1,4 @@
-// [server/storage.ts] - Version 11.0 - Suppression de la logique de transport des rapports
+// [server/storage.ts] - Version 12.0 - Enrichissement des données du rapport détaillé avec les paramètres de configuration
 import Database from "@replit/database";
 import {
   type BudgetModel,
@@ -336,6 +336,18 @@ export class ReplitDbStorage implements IStorage {
         costPlayoffsAssistantCoach,
         subTotalPlayoffs,
         grandTotal,
+
+        // Champs de configuration ajoutés pour l'export détaillé
+        headCoachRate: Number(model.headCoachRate),
+        assistantCoachRate: Number(model.assistantCoachRate),
+        employerContributionRate: Number(model.employerContributionRate),
+        practicesPerWeek: model.practicesPerWeek,
+        practiceDuration: Number(model.practiceDuration),
+        numGames: model.numGames,
+        gameDuration: Number(model.gameDuration),
+        playoffFinalDays: model.playoffFinalDays,
+        playoffFinalsDuration: Number(model.playoffFinalsDuration),
+        transportationFee: Number(model.transportationFee),
       };
 
       // Dupliquer la ligne pour chaque équipe définie dans le modèle

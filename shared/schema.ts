@@ -1,4 +1,4 @@
-// [shared/schema.ts] - Version 11.0 - Suppression de la colonne Transport du rapport
+// [shared/schema.ts] - Version 12.0 - Ajout des champs de configuration à DetailedReportLine pour l'export détaillé
 import { sql } from "drizzle-orm";
 import {
   decimal,
@@ -137,4 +137,16 @@ export type DetailedReportLine = {
 
   // Total (par équipe)
   grandTotal: number;
+
+  // --- Champs de configuration pour l'export détaillé ---
+  headCoachRate?: number | null;
+  assistantCoachRate?: number | null;
+  employerContributionRate?: number | null;
+  practicesPerWeek?: number | null;
+  practiceDuration?: number | null;
+  numGames?: number | null;
+  gameDuration?: number | null;
+  playoffFinalDays?: number | null;
+  playoffFinalsDuration?: number | null;
+  transportationFee?: number | null;
 };

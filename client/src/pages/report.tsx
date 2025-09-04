@@ -1,4 +1,4 @@
-// [client/src/pages/report.tsx] - Version 8.0 - Correction finale du défilement horizontal
+// [client/src/pages/report.tsx] - Version 9.0 - Ajout du menu d'export Excel (Sommaire / Détaillé)
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
@@ -17,9 +17,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button';
-import { FileText, ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
+import { FileText, ArrowLeft, Loader2, AlertTriangle, FileDown } from 'lucide-react';
 import { getDetailedReport } from '../lib/api-client';
+import { exportReportToExcel } from '../lib/excel-export';
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
 import type { DetailedReportLine } from '@shared/schema';
 
@@ -77,7 +84,9 @@ export default function ReportPage() {
       disciplineTotals[discipline] = grouped[discipline].reduce(
         (total, line) => {
           Object.keys(total).forEach(key => {
-            (total as any)[key] += (line as any)[key];
+            if (typeof (line as any)[key] === 'number') {
+              (total as any)[key] += (line as any)[key];
+            }
           });
           return total;
         },
@@ -88,7 +97,9 @@ export default function ReportPage() {
     const grandTotal = Object.values(disciplineTotals).reduce(
       (total, disciplineTotal) => {
         Object.keys(total).forEach(key => {
-          (total as any)[key] += (disciplineTotal as any)[key];
+          if (typeof (disciplineTotal as any)[key] === 'number') {
+            (total as any)[key] += (disciplineTotal as any)[key];
+          }
         });
         return total;
       },
@@ -145,12 +156,38 @@ export default function ReportPage() {
             <CardTitle className="text-xl font-semibold text-primary">
               Résumé Financier
             </CardTitle>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour au Calculateur
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Retour au Calculateur
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={reportQuery.isLoading || !reportQuery.data || reportQuery.data.length === 0}
+                  >
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Exporter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => reportQuery.data && exportReportToExcel(reportQuery.data, 'summary')}
+                  >
+                    Export Sommaire
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => reportQuery.data && exportReportToExcel(reportQuery.data, 'detailed')}
+                  >
+                    Export Détaillé
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </CardHeader>
           <CardContent className="p-0 sm:p-2 md:p-6">
             {reportQuery.isLoading && (
@@ -167,7 +204,6 @@ export default function ReportPage() {
               </div>
             )}
             {reportQuery.isSuccess && processedData && (
-              // L'ancienne div "overflow-x-auto" a été retirée d'ici pour centraliser le défilement.
               <div>
                 <Table className="min-w-full text-sm">
                   <TableHeader>

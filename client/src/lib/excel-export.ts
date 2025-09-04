@@ -1,6 +1,44 @@
-// [client/src/lib/excel-export.ts] - Version 4.0 - Ajout de formules dynamiques pour le calcul des semaines
+// [client/src/lib/excel-export.ts] - Version 5.0 - Ajout de l'export du rapport financier (sommaire et détaillé)
 import * as XLSX from 'xlsx';
 import type { BudgetFormData, BudgetResults } from '../types/budget';
+import type { DetailedReportLine } from '@shared/schema';
+
+// --- Helpers de formatage ---
+const currencyFormat = '#,##0.00" $"'.replace('.', ',');
+const percentFormat = '0.00" %"'.replace('.', ',');
+const dateFormat = 'yyyy-mm-dd';
+
+const currencyCell = (value: number | undefined | null) => {
+  if (typeof value === 'number') {
+    return { t: 'n', v: value, z: currencyFormat };
+  }
+  return { t: 's', v: 'N/A' };
+};
+
+const numberCell = (value: number | undefined | null) => {
+  if (typeof value === 'number') {
+    return { t: 'n', v: value };
+  }
+  return { t: 's', v: 'N/A' };
+};
+
+const percentCell = (value: number | undefined | null) => {
+    if (typeof value === 'number') {
+        return { t: 'n', v: value / 100, z: percentFormat };
+    }
+    return { t: 's', v: 'N/A' };
+};
+
+const dateCell = (value: Date | string | undefined | null) => {
+  if (value) {
+    try {
+      return { t: 'd', v: new Date(value), z: dateFormat };
+    } catch (e) {
+      return { t: 's', v: 'Date invalide' };
+    }
+  }
+  return { t: 's', v: 'N/A' };
+};
 
 /**
  * Crée et télécharge un fichier Excel à partir des données du budget.
@@ -112,5 +150,116 @@ export const exportToExcel = (formData: BudgetFormData, results: BudgetResults, 
 
   // 5. Générer et déclencher le téléchargement du fichier
   const fileName = `Budget - ${modelName.replace(/ /g, '_')}.xlsx`;
+  XLSX.writeFile(workbook, fileName);
+};
+
+// --- NOUVELLE FONCTION D'EXPORT DE RAPPORT ---
+
+type ColumnDefinition = {
+  label: string;
+  key: keyof DetailedReportLine;
+  formatter: (value: any) => any;
+  width?: number;
+};
+
+const reportColumns: Record<string, ColumnDefinition> = {
+  discipline: { label: 'Discipline', key: 'discipline', formatter: (v) => v, width: 25 },
+  gender: { label: 'Sexe', key: 'gender', formatter: (v) => v, width: 10 },
+  category: { label: 'Catégorie', key: 'category', formatter: (v) => v, width: 15 },
+  level: { label: 'Niveau', key: 'level', formatter: (v) => v, width: 15 },
+
+  seasonStartDate: { label: 'Début Saison', key: 'seasonStartDate', formatter: dateCell, width: 15 },
+  seasonEndDate: { label: 'Fin Saison', key: 'seasonEndDate', formatter: dateCell, width: 15 },
+  playoffEndDate: { label: 'Fin Séries', key: 'playoffEndDate', formatter: dateCell, width: 15 },
+
+  costSeasonHeadCoach: { label: 'Salaire Chef Saison', key: 'costSeasonHeadCoach', formatter: currencyCell, width: 20 },
+  costSeasonAssistantCoach: { label: 'Salaire Adj. Saison', key: 'costSeasonAssistantCoach', formatter: currencyCell, width: 20 },
+  tournamentBonus: { label: 'Frais Tournoi', key: 'tournamentBonus', formatter: currencyCell, width: 18 },
+  federationFee: { label: 'Frais Fédération', key: 'federationFee', formatter: currencyCell, width: 18 },
+  subTotalRegularSeason: { label: 'Sous-Total Saison', key: 'subTotalRegularSeason', formatter: currencyCell, width: 20 },
+
+  costPlayoffsHeadCoach: { label: 'Salaire Chef Séries', key: 'costPlayoffsHeadCoach', formatter: currencyCell, width: 20 },
+  costPlayoffsAssistantCoach: { label: 'Salaire Adj. Séries', key: 'costPlayoffsAssistantCoach', formatter: currencyCell, width: 20 },
+  subTotalPlayoffs: { label: 'Sous-Total Séries', key: 'subTotalPlayoffs', formatter: currencyCell, width: 20 },
+
+  grandTotal: { label: 'TOTAL', key: 'grandTotal', formatter: currencyCell, width: 22 },
+
+  // Colonnes détaillées
+  headCoachRate: { label: 'Taux Chef ($/h)', key: 'headCoachRate', formatter: currencyCell, width: 18 },
+  assistantCoachRate: { label: 'Taux Adjoint ($/h)', key: 'assistantCoachRate', formatter: currencyCell, width: 18 },
+  employerContributionRate: { label: 'Part Employeur (%)', key: 'employerContributionRate', formatter: percentCell, width: 18 },
+  transportationFee: { label: 'Frais Transport ($)', key: 'transportationFee', formatter: currencyCell, width: 18 },
+  practicesPerWeek: { label: 'Entraîn./sem', key: 'practicesPerWeek', formatter: numberCell, width: 15 },
+  practiceDuration: { label: 'Durée Entraîn. (h)', key: 'practiceDuration', formatter: numberCell, width: 18 },
+  numGames: { label: 'Nb. Matchs', key: 'numGames', formatter: numberCell, width: 15 },
+  gameDuration: { label: 'Durée Match (h)', key: 'gameDuration', formatter: numberCell, width: 18 },
+  playoffFinalDays: { label: 'Jours Finales', key: 'playoffFinalDays', formatter: numberCell, width: 15 },
+  playoffFinalsDuration: { label: 'Durée Finale (h)', key: 'playoffFinalsDuration', formatter: numberCell, width: 18 },
+};
+
+const summaryExportKeys: (keyof typeof reportColumns)[] = [
+  'discipline', 'gender', 'category', 'level',
+  'seasonStartDate', 'seasonEndDate', 'playoffEndDate',
+  'costSeasonHeadCoach', 'costSeasonAssistantCoach', 'tournamentBonus', 'federationFee', 'subTotalRegularSeason',
+  'costPlayoffsHeadCoach', 'costPlayoffsAssistantCoach', 'subTotalPlayoffs',
+  'grandTotal'
+];
+
+const detailedExportKeys: (keyof typeof reportColumns)[] = [
+  'discipline', 'gender', 'category', 'level',
+  'seasonStartDate', 'seasonEndDate', 'playoffEndDate',
+  'costSeasonHeadCoach', 'costSeasonAssistantCoach', 'tournamentBonus', 'federationFee', 'transportationFee', 'subTotalRegularSeason',
+  'costPlayoffsHeadCoach', 'costPlayoffsAssistantCoach', 'subTotalPlayoffs',
+  'grandTotal',
+  'headCoachRate', 'assistantCoachRate', 'employerContributionRate',
+  'practicesPerWeek', 'practiceDuration', 'numGames', 'gameDuration',
+  'playoffFinalDays', 'playoffFinalsDuration'
+];
+
+
+/**
+ * Crée et télécharge un fichier Excel à partir des données du rapport détaillé.
+ * @param reportData - Les données du rapport à exporter.
+ * @param type - Le format du rapport : 'summary' ou 'detailed'.
+ */
+export const exportReportToExcel = (reportData: DetailedReportLine[], type: 'summary' | 'detailed'): void => {
+  if (!reportData || reportData.length === 0) {
+    console.warn("Aucune donnée à exporter.");
+    return;
+  }
+
+  const isDetailed = type === 'detailed';
+  const selectedKeys = isDetailed ? detailedExportKeys : summaryExportKeys;
+  const columns = selectedKeys.map(key => reportColumns[key]);
+
+  // 1. Créer les en-têtes
+  const headers = columns.map(col => ({
+      t: 's',
+      v: col.label,
+      s: { font: { bold: true }, alignment: { horizontal: 'center' } }
+  }));
+
+  // 2. Créer les lignes de données
+  const dataRows = reportData.map(line => {
+    return columns.map(col => {
+      const value = line[col.key];
+      return col.formatter(value);
+    });
+  });
+
+  const data = [headers, ...dataRows];
+
+  // 3. Créer la feuille de calcul
+  const worksheet = XLSX.utils.aoa_to_sheet(data, { cellStyles: true });
+
+  // 4. Appliquer les largeurs de colonnes
+  worksheet['!cols'] = columns.map(col => ({ wch: col.width || 15 }));
+
+  // 5. Créer le classeur et ajouter la feuille
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Rapport Financier');
+
+  // 6. Générer et déclencher le téléchargement
+  const fileName = isDetailed ? 'Rapport_Detaillé.xlsx' : 'Rapport_Sommaire.xlsx';
   XLSX.writeFile(workbook, fileName);
 };

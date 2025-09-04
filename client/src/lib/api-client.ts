@@ -1,4 +1,4 @@
-// [client/src/lib/api-client.ts] - Version 5.0 - Ajout de la récupération du rapport détaillé
+// [client/src/lib/api-client.ts] - Version 6.0 - Vérification de la signature pour le rapport détaillé enrichi
 import type { BudgetModel, DetailedReportLine, InsertBudgetModel } from '@shared/schema';
 import { apiRequest } from './queryClient';
 
