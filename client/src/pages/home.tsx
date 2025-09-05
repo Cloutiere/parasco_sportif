@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Settings, BarChart3, Calculator, CalendarIcon, Archive, FileText, Trash2, FileDown } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { format, startOfWeek, endOfWeek, subMonths } from 'date-fns';
+import { format, startOfWeek, endOfWeek, subMonths } from 'date-fns'; // subMonths sera supprimé pour 'month'
 import { fr } from 'date-fns/locale';
 
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
@@ -42,6 +42,8 @@ export default function Home() {
   const [generatedModelName, setGeneratedModelName] = useState('');
   const [numberOfTeams, setNumberOfTeams] = useState(1);
   const [loadedModelId, setLoadedModelId] = useState<string | null>(null);
+  // Ajout du nouvel état pour gérer le mois affiché dans le calendrier
+  const [displayedMonth, setDisplayedMonth] = useState<Date>(new Date());
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -577,7 +579,14 @@ export default function Home() {
                       <Label>Début de la saison</Label>
                       <Popover
                         open={openPopover === 'seasonStartDate'}
-                        onOpenChange={isOpen => setOpenPopover(isOpen ? 'seasonStartDate' : null)}
+                        onOpenChange={isOpen => {
+                          if (isOpen) {
+                            setDisplayedMonth(formData.seasonStartDate || new Date()); // Synchronise le mois affiché
+                            setOpenPopover('seasonStartDate');
+                          } else {
+                            setOpenPopover(null);
+                          }
+                        }}
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -596,7 +605,8 @@ export default function Home() {
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            month={formData.seasonStartDate ? subMonths(formData.seasonStartDate, 1) : undefined}
+                            month={displayedMonth} // Utilise l'état `displayedMonth`
+                            onMonthChange={setDisplayedMonth} // Permet la navigation de mois
                             selected={formData.seasonStartDate}
                             onSelect={date => {
                               handleInputChange(
@@ -620,7 +630,14 @@ export default function Home() {
                       <Label>Fin de la saison</Label>
                       <Popover
                         open={openPopover === 'seasonEndDate'}
-                        onOpenChange={isOpen => setOpenPopover(isOpen ? 'seasonEndDate' : null)}
+                        onOpenChange={isOpen => {
+                          if (isOpen) {
+                            setDisplayedMonth(formData.seasonEndDate || new Date()); // Synchronise le mois affiché
+                            setOpenPopover('seasonEndDate');
+                          } else {
+                            setOpenPopover(null);
+                          }
+                        }}
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -639,7 +656,8 @@ export default function Home() {
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            month={formData.seasonEndDate ? subMonths(formData.seasonEndDate, 1) : undefined}
+                            month={displayedMonth} // Utilise l'état `displayedMonth`
+                            onMonthChange={setDisplayedMonth} // Permet la navigation de mois
                             selected={formData.seasonEndDate}
                             onSelect={date => {
                               handleInputChange('seasonEndDate', date ? endOfWeek(date, { weekStartsOn: 0 }) : undefined);
@@ -715,7 +733,14 @@ export default function Home() {
                       <Label>Début des séries</Label>
                       <Popover
                         open={openPopover === 'playoffStartDate'}
-                        onOpenChange={isOpen => setOpenPopover(isOpen ? 'playoffStartDate' : null)}
+                        onOpenChange={isOpen => {
+                          if (isOpen) {
+                            setDisplayedMonth(formData.playoffStartDate || new Date()); // Synchronise le mois affiché
+                            setOpenPopover('playoffStartDate');
+                          } else {
+                            setOpenPopover(null);
+                          }
+                        }}
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -734,7 +759,8 @@ export default function Home() {
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            month={formData.playoffStartDate ? subMonths(formData.playoffStartDate, 1) : undefined}
+                            month={displayedMonth} // Utilise l'état `displayedMonth`
+                            onMonthChange={setDisplayedMonth} // Permet la navigation de mois
                             selected={formData.playoffStartDate}
                             onSelect={date => {
                               handleInputChange(
@@ -758,7 +784,14 @@ export default function Home() {
                       <Label>Fin des séries</Label>
                       <Popover
                         open={openPopover === 'playoffEndDate'}
-                        onOpenChange={isOpen => setOpenPopover(isOpen ? 'playoffEndDate' : null)}
+                        onOpenChange={isOpen => {
+                          if (isOpen) {
+                            setDisplayedMonth(formData.playoffEndDate || new Date()); // Synchronise le mois affiché
+                            setOpenPopover('playoffEndDate');
+                          } else {
+                            setOpenPopover(null);
+                          }
+                        }}
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -777,7 +810,8 @@ export default function Home() {
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            month={formData.playoffEndDate ? subMonths(formData.playoffEndDate, 1) : undefined}
+                            month={displayedMonth} // Utilise l'état `displayedMonth`
+                            onMonthChange={setDisplayedMonth} // Permet la navigation de mois
                             selected={formData.playoffEndDate}
                             onSelect={date => {
                               handleInputChange(

@@ -1,4 +1,4 @@
-// [server/storage.ts] - Version 13.0 - Centralisation de la logique de calcul des semaines actives
+// [server/storage.ts] - Version 14.0 - Centralisation de la logique de tri des modèles de budget
 import Database from "@replit/database";
 import {
   type BudgetModel,
@@ -41,6 +41,17 @@ export class ReplitDbStorage implements IStorage {
   private BUDGET_MODEL_PREFIX = "budget_model_";
   private USER_PREFIX = "user_";
 
+  /**
+   * Ordre de tri personnalisé pour les niveaux.
+   */
+  private static readonly _LEVEL_ORDER: { [key: string]: number } = {
+    'Atome': 1,
+    'Benjamin': 2,
+    'Cadet': 3,
+    'Juvénile': 4,
+    'Tous': 5,
+  };
+
   constructor() {
     this.db = new Database();
   }
@@ -59,6 +70,27 @@ export class ReplitDbStorage implements IStorage {
       playoffStartDate: rawModel.playoffStartDate ? new Date(rawModel.playoffStartDate) : null,
       playoffEndDate: rawModel.playoffEndDate ? new Date(rawModel.playoffEndDate) : null,
     };
+  }
+
+  /**
+   * Trie un tableau d'entités (modèles de budget ou lignes de rapport)
+   * par discipline (alphabétique) puis par niveau (ordre personnalisé).
+   * @param entities Le tableau d'entités à trier.
+   * @returns Le tableau d'entités trié.
+   */
+  private _sortBudgetEntities<T extends { discipline: string; level: string }>(entities: T[]): T[] {
+    return entities.sort((a, b) => {
+      // 1. Tri principal par discipline (alphabétique)
+      const disciplineComparison = a.discipline.localeCompare(b.discipline);
+      if (disciplineComparison !== 0) {
+        return disciplineComparison;
+      }
+
+      // 2. Tri secondaire par niveau (ordre personnalisé)
+      const levelAOrder = ReplitDbStorage._LEVEL_ORDER[a.level] || 99;
+      const levelBOrder = ReplitDbStorage._LEVEL_ORDER[b.level] || 99;
+      return levelAOrder - levelBOrder;
+    });
   }
 
   // --- User methods (STUB) ---
@@ -141,7 +173,9 @@ export class ReplitDbStorage implements IStorage {
       .filter((result: any) => result?.ok && result?.value)
       .map((result: any) => result.value);
     // Hydrater les modèles
-    return rawModels.map((model: any) => this._hydrateModel(model));
+    const hydratedModels = rawModels.map((model: any) => this._hydrateModel(model));
+    // Trier les modèles avant de les retourner
+    return this._sortBudgetEntities(hydratedModels);
   }
 
   async getBudgetModelById(id: string): Promise<BudgetModel | undefined> {
@@ -257,17 +291,8 @@ export class ReplitDbStorage implements IStorage {
   }
 
   async getDetailedReport(): Promise<DetailedReportLine[]> {
-    const allModels = await this.getBudgetModels();
+    const allModels = await this.getBudgetModels(); // Utilise getBudgetModels qui retourne déjà des modèles triés
     const reportLines: DetailedReportLine[] = [];
-
-    // Définir l'ordre de tri personnalisé pour le niveau
-    const levelOrder: { [key: string]: number } = {
-      'Atome': 1,
-      'Benjamin': 2,
-      'Cadet': 3,
-      'Juvénile': 4,
-      'Tous': 5,
-    };
 
     for (const model of allModels) {
       // --- Calculs de base ---
@@ -343,20 +368,13 @@ export class ReplitDbStorage implements IStorage {
     }
 
     // Trier les résultats finaux avant de les retourner
-    reportLines.sort((a, b) => {
-      // 1. Tri principal par discipline (alphabétique)
-      const disciplineComparison = a.discipline.localeCompare(b.discipline);
-      if (disciplineComparison !== 0) {
-        return disciplineComparison;
-      }
-
-      // 2. Tri secondaire par niveau (ordre personnalisé)
-      const levelAOrder = levelOrder[a.level] || 99;
-      const levelBOrder = levelOrder[b.level] || 99;
-      return levelAOrder - levelBOrder;
-    });
-
-    return reportLines;
+    // Puisque `allModels` est déjà trié via `getBudgetModels`, les `reportLines` résultantes
+    // (qui sont basées sur `allModels` et créées dans le même ordre) sont déjà triées.
+    // Cependant, si la logique de "duplication pour chaque équipe" change l'ordre
+    // ou si `getDetailedReport` devait être appelée indépendamment de `getBudgetModels`
+    // (ce qui n'est pas le cas ici), il serait pertinent de trier à nouveau.
+    // Pour la robustesse, nous allons maintenir l'appel à _sortBudgetEntities.
+    return this._sortBudgetEntities(reportLines);
   }
 }
 
