@@ -1,4 +1,4 @@
-// [client/src/pages/home.tsx] - Version 33.0 - Affichage des coûts par rôle (chef/adjoint)
+// [client/src/pages/home.tsx] - Version 36.0 - Correction du chargement des dates pour gérer les fuseaux horaires
 import { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
@@ -16,13 +16,25 @@ import { format, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import { useBudgetCalculator } from '../hooks/useBudgetCalculator';
-import { HOLIDAY_WEEKS_STARTS } from '../lib/date-utils';
+import { HOLIDAY_WEEKS_STARTS } from '@shared/date-utils';
 import { createBudgetModel, getBudgetModels, updateBudgetModel } from '../lib/api-client';
 import { exportToExcel } from '../lib/excel-export';
 import type { InsertBudgetModel, BudgetModel } from '@shared/schema';
 import { useToast } from '../hooks/use-toast';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
+
+/**
+ * Compense le décalage de fuseau horaire appliqué par le navigateur lors de la
+ * conversion d'une chaîne ISO (UTC) en objet Date.
+ * @param date - La date (potentiellement décalée) à corriger.
+ * @returns Une nouvelle date dont le jour correspond à la date UTC d'origine.
+ */
+function convertUTCDateToLocalDate(date: Date | null): Date | null {
+  if (!date) return null;
+  const newDate = new Date(date.getTime() + date.getTimezoneOffset() * 60 * 1000);
+  return newDate;
+}
 
 export default function Home() {
   const { formData, results, handleInputChange, formatCurrency, setFormData } = useBudgetCalculator();
@@ -180,10 +192,10 @@ export default function Home() {
       tournamentBonus: Number(model.tournamentBonus),
       federationFee: Number(model.federationFee),
       transportationFee: Number(model.transportationFee),
-      seasonStartDate: model.seasonStartDate ? new Date(model.seasonStartDate) : null,
-      seasonEndDate: model.seasonEndDate ? new Date(model.seasonEndDate) : null,
-      playoffStartDate: model.playoffStartDate ? new Date(model.playoffStartDate) : null,
-      playoffEndDate: model.playoffEndDate ? new Date(model.playoffEndDate) : null,
+      seasonStartDate: convertUTCDateToLocalDate(model.seasonStartDate ? new Date(model.seasonStartDate) : null),
+      seasonEndDate: convertUTCDateToLocalDate(model.seasonEndDate ? new Date(model.seasonEndDate) : null),
+      playoffStartDate: convertUTCDateToLocalDate(model.playoffStartDate ? new Date(model.playoffStartDate) : null),
+      playoffEndDate: convertUTCDateToLocalDate(model.playoffEndDate ? new Date(model.playoffEndDate) : null),
     });
   };
 
@@ -214,7 +226,7 @@ export default function Home() {
     holiday: (date: Date) => HOLIDAY_WEEKS_STARTS.has(startOfWeek(date, { weekStartsOn: 0 }).getTime()),
   };
 
-  // MODIFIÉ: Les libellés et les données du graphique sont mis à jour
+  // Les libellés et les données du graphique sont mis à jour
   const chartData = {
     labels: [
       'Salaire Chef (Saison)',
@@ -435,14 +447,26 @@ export default function Home() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem key="Handball" value="Handball">
-                            Handball
+                          <SelectItem key="Badminton" value="Badminton">
+                            Badminton
                           </SelectItem>
                           <SelectItem key="Basketball" value="Basketball">
                             Basketball
                           </SelectItem>
+                          <SelectItem key="Flag football (automne)" value="Flag football (automne)">
+                            Flag football (automne)
+                          </SelectItem>
+                          <SelectItem key="Flag football (printemps)" value="Flag football (printemps)">
+                            Flag football (printemps)
+                          </SelectItem>
+                          <SelectItem key="Handball" value="Handball">
+                            Handball
+                          </SelectItem>
                           <SelectItem key="Volleyball" value="Volleyball">
                             Volleyball
+                          </SelectItem>
+                          <SelectItem key="Volleyball de plage" value="Volleyball de plage">
+                            Volleyball de plage
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -865,7 +889,7 @@ export default function Home() {
                           Saison Régulière
                         </th>
                       </tr>
-                      {/* MODIFIÉ: Affichage des coûts par rôle */}
+                      {/* Affichage des coûts par rôle */}
                       <tr className="hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4">Salaire Chef (Saison)</td>
                         <td
@@ -916,7 +940,7 @@ export default function Home() {
                           Séries (Playoffs)
                         </th>
                       </tr>
-                      {/* MODIFIÉ: Affichage des coûts par rôle */}
+                      {/* Affichage des coûts par rôle */}
                       <tr className="hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4">Salaire Chef (Séries)</td>
                         <td

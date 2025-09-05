@@ -1,18 +1,18 @@
-// [shared/date-utils.ts] - Version 1.0 - Centralisation de la logique de calcul des semaines actives
+// [shared/date-utils.ts] - Version 1.1 - Correction des dates pour utiliser UTC
 import { addWeeks, isBefore, startOfWeek } from 'date-fns';
 
 /**
  * Définit les dates de début des semaines de pause qui ne doivent pas être comptabilisées.
- * Une semaine est définie par son premier jour (dimanche). Si une date de pause tombe
- * n'importe quel jour de la semaine, la semaine entière est exclue.
+ * Les dates sont définies en UTC pour éviter les problèmes de fuseau horaire.
+ * Note: Le mois dans Date.UTC est 0-indexé (0 = Janvier, 11 = Décembre).
  */
 export const HOLIDAY_WEEKS_STARTS = new Set([
   // Semaine de Noël (21 déc 2025 tombe un dimanche)
-  startOfWeek(new Date('2025-12-21')).getTime(),
+  startOfWeek(new Date(Date.UTC(2025, 11, 21))).getTime(),
   // Semaine du Nouvel An (28 déc 2025 tombe un dimanche)
-  startOfWeek(new Date('2025-12-28')).getTime(),
+  startOfWeek(new Date(Date.UTC(2025, 11, 28))).getTime(),
   // Semaine de relâche (1er mars 2026 tombe un dimanche)
-  startOfWeek(new Date('2026-03-01')).getTime(),
+  startOfWeek(new Date(Date.UTC(2026, 2, 1))).getTime(),
 ]);
 
 /**
